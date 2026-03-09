@@ -8,6 +8,7 @@ import { Support } from './pages/Support'
 import { Privacy } from './pages/Privacy'
 import { Terms } from './pages/Terms'
 import { NotFound } from './pages/NotFound'
+import { App } from './pages/App'
 
 const router = createBrowserRouter([
   {
@@ -15,6 +16,7 @@ const router = createBrowserRouter([
     element: <Layout />,
     children: [
       { index: true, element: <Home /> },
+      { path: 'app', element: <App /> },
       { path: 'support', element: <Support /> },
       { path: 'privacy', element: <Privacy /> },
       { path: 'terms', element: <Terms /> },
