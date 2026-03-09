@@ -22,8 +22,8 @@ export function App() {
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL)
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ type: 'idle' })
   const [workflowActive, setWorkflowActive] = useState(false)
-  const [currentStage, setCurrentStage] = useState<number | null>(null)
-  const [analysisOutput, setAnalysisOutput] = useState<string | null>(null)
+  const [currentStage, _setCurrentStage] = useState<number | null>(null)
+  const [analysisOutput, _setAnalysisOutput] = useState<string | null>(null)
 
   async function handleSend() {
     setStatus({ type: 'loading' })
