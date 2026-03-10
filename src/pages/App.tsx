@@ -1,4 +1,4 @@
-import { useEffect, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const WORKFLOW_STAGES = [
@@ -31,16 +31,18 @@ type AnalysisOutput = {
 }
 
 const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
-  { key: 'asset',                label: 'Asset' },
-  { key: 'nature_dependency',    label: 'Nature Dependency' },
-  { key: 'tnfd_scenario_frame',  label: 'TNFD Scenario Frame' },
-  { key: 'financial_impact',     label: 'Financial Impact' },
-  { key: 'evidence_synthesis',   label: 'Evidence Synthesis' },
-  { key: 'adaptation_strategy',  label: 'Adaptation Strategy' },
+  { key: 'asset',                  label: 'Asset' },
+  { key: 'nature_dependency',      label: 'Nature Dependency' },
+  { key: 'tnfd_scenario_frame',    label: 'TNFD Scenario Frame' },
+  { key: 'financial_impact',       label: 'Financial Impact' },
+  { key: 'evidence_synthesis',     label: 'Evidence Synthesis' },
+  { key: 'adaptation_strategy',    label: 'Adaptation Strategy' },
   { key: 'stakeholder_narratives', label: 'Stakeholder Narratives' },
-  { key: 'evaluation_result',    label: 'Evaluation Result' },
-  { key: 'explainability_pack',  label: 'Explainability Pack' },
+  { key: 'evaluation_result',      label: 'Evaluation Result' },
+  { key: 'explainability_pack',    label: 'Explainability Pack' },
 ]
+
+const POLL_INTERVAL_MS = 3000
 
 export function App() {
   const [jsonBody, setJsonBody] = useState(EXAMPLE_JSON)
@@ -49,12 +51,14 @@ export function App() {
   const [workflowActive, setWorkflowActive] = useState(false)
   const [currentStage, _setCurrentStage] = useState<number | null>(null)
   const [analysisOutput, setAnalysisOutput] = useState<AnalysisOutput | null>(null)
-  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null)
   const [waitingForOutput, setWaitingForOutput] = useState(false)
 
-  // Subscribe to Supabase Realtime whenever a new request is sent
+  // ISO timestamp recorded the moment Send succeeds — used to filter for rows
+  // newer than this run, regardless of what request_id n8n writes.
+  const sentAtRef = useRef<string | null>(null)
+
   useEffect(() => {
-    if (!currentRequestId) return
+    if (!workflowActive) return
 
     setWaitingForOutput(true)
     setAnalysisOutput(null)
@@ -78,45 +82,45 @@ export function App() {
       setWaitingForOutput(false)
     }
 
-    // 1. Realtime subscription — catches rows inserted after subscribe() activates.
-    //    No server-side filter: filtering on a non-PK column requires REPLICA IDENTITY
-    //    FULL; without it the server filter silently drops all events. We match client-side.
+    // 1. Realtime — fires immediately when any row is inserted after subscription activates
     const channel = supabase
-      .channel(`output-${currentRequestId}`)
+      .channel('workflow-output-watch')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'workflow_outputs' },
-        (payload) => {
-          const row = payload.new as AnalysisOutput & { request_id: string }
-          if (row.request_id === currentRequestId) applyRow(row)
-        }
+        (payload) => applyRow(payload.new as AnalysisOutput)
       )
       .subscribe()
 
-    // 2. Fallback query — catches rows that were inserted before the subscription
-    //    activated (race condition), or while the WebSocket was still connecting
-    async function checkExisting() {
-      const { data } = await supabase
+    // 2. Polling fallback every 3 s — queries for the most recent row inserted
+    //    after the workflow was triggered, in case the Realtime event is missed
+    const sentAt = sentAtRef.current
+    const interval = setInterval(async () => {
+      const query = supabase
         .from('workflow_outputs')
         .select('asset,nature_dependency,tnfd_scenario_frame,financial_impact,evidence_synthesis,adaptation_strategy,stakeholder_narratives,evaluation_result,explainability_pack')
-        .eq('request_id', currentRequestId)
-        .maybeSingle()
+        .order('created_at', { ascending: false })
+        .limit(1)
 
+      if (sentAt) query.gte('created_at', sentAt)
+
+      const { data } = await query.maybeSingle()
       if (data) applyRow(data as AnalysisOutput)
-    }
-    checkExisting()
+    }, POLL_INTERVAL_MS)
 
     return () => {
+      settled = true
       supabase.removeChannel(channel)
+      clearInterval(interval)
     }
-  }, [currentRequestId])
+  }, [workflowActive])
 
   async function handleSend() {
     setStatus({ type: 'loading' })
+    setWorkflowActive(false)
     try {
       const parsed = JSON.parse(jsonBody)
       const requestId = crypto.randomUUID()
-      setCurrentRequestId(requestId)
 
       const res = await fetch(webhookUrl, {
         method: 'POST',
@@ -125,6 +129,7 @@ export function App() {
       })
       const data = await res.json()
       if (res.ok && data.message === 'Workflow was started') {
+        sentAtRef.current = new Date().toISOString()
         setStatus({ type: 'success', message: 'Workflow started successfully' })
         setWorkflowActive(true)
       } else {
