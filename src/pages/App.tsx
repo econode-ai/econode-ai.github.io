@@ -1,4 +1,5 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { supabase } from '@/lib/supabase'
 
 const WORKFLOW_STAGES = [
   'Data Ingestion',
@@ -17,22 +18,110 @@ const EXAMPLE_JSON = `{
   ]
 }`
 
+type AnalysisOutput = {
+  asset: unknown
+  nature_dependency: unknown
+  tnfd_scenario_frame: unknown
+  financial_impact: unknown
+  evidence_synthesis: unknown
+  adaptation_strategy: unknown
+  stakeholder_narratives: unknown
+  evaluation_result: unknown
+  explainability_pack: unknown
+}
+
+const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
+  { key: 'asset',                label: 'Asset' },
+  { key: 'nature_dependency',    label: 'Nature Dependency' },
+  { key: 'tnfd_scenario_frame',  label: 'TNFD Scenario Frame' },
+  { key: 'financial_impact',     label: 'Financial Impact' },
+  { key: 'evidence_synthesis',   label: 'Evidence Synthesis' },
+  { key: 'adaptation_strategy',  label: 'Adaptation Strategy' },
+  { key: 'stakeholder_narratives', label: 'Stakeholder Narratives' },
+  { key: 'evaluation_result',    label: 'Evaluation Result' },
+  { key: 'explainability_pack',  label: 'Explainability Pack' },
+]
+
 export function App() {
   const [jsonBody, setJsonBody] = useState(EXAMPLE_JSON)
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL)
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ type: 'idle' })
   const [workflowActive, setWorkflowActive] = useState(false)
   const [currentStage, _setCurrentStage] = useState<number | null>(null)
-  const [analysisOutput, _setAnalysisOutput] = useState<string | null>(null)
+  const [analysisOutput, setAnalysisOutput] = useState<AnalysisOutput | null>(null)
+  const [currentRequestId, setCurrentRequestId] = useState<string | null>(null)
+  const [waitingForOutput, setWaitingForOutput] = useState(false)
+
+  // Subscribe to Supabase Realtime whenever a new request is sent
+  useEffect(() => {
+    if (!currentRequestId) return
+
+    setWaitingForOutput(true)
+    setAnalysisOutput(null)
+
+    let settled = false
+
+    function applyRow(row: AnalysisOutput) {
+      if (settled) return
+      settled = true
+      setAnalysisOutput({
+        asset:                  row.asset,
+        nature_dependency:      row.nature_dependency,
+        tnfd_scenario_frame:    row.tnfd_scenario_frame,
+        financial_impact:       row.financial_impact,
+        evidence_synthesis:     row.evidence_synthesis,
+        adaptation_strategy:    row.adaptation_strategy,
+        stakeholder_narratives: row.stakeholder_narratives,
+        evaluation_result:      row.evaluation_result,
+        explainability_pack:    row.explainability_pack,
+      })
+      setWaitingForOutput(false)
+    }
+
+    // 1. Realtime subscription — catches rows inserted after subscribe() activates
+    const channel = supabase
+      .channel(`output-${currentRequestId}`)
+      .on(
+        'postgres_changes',
+        {
+          event: 'INSERT',
+          schema: 'public',
+          table: 'workflow_outputs',
+          filter: `request_id=eq.${currentRequestId}`,
+        },
+        (payload) => applyRow(payload.new as AnalysisOutput)
+      )
+      .subscribe()
+
+    // 2. Fallback query — catches rows that were inserted before the subscription
+    //    activated (race condition), or while the WebSocket was still connecting
+    async function checkExisting() {
+      const { data } = await supabase
+        .from('workflow_outputs')
+        .select('asset,nature_dependency,tnfd_scenario_frame,financial_impact,evidence_synthesis,adaptation_strategy,stakeholder_narratives,evaluation_result,explainability_pack')
+        .eq('request_id', currentRequestId)
+        .maybeSingle()
+
+      if (data) applyRow(data as AnalysisOutput)
+    }
+    checkExisting()
+
+    return () => {
+      supabase.removeChannel(channel)
+    }
+  }, [currentRequestId])
 
   async function handleSend() {
     setStatus({ type: 'loading' })
     try {
       const parsed = JSON.parse(jsonBody)
+      const requestId = crypto.randomUUID()
+      setCurrentRequestId(requestId)
+
       const res = await fetch(webhookUrl, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(parsed),
+        body: JSON.stringify({ ...parsed, requestId }),
       })
       const data = await res.json()
       if (res.ok && data.message === 'Workflow was started') {
@@ -121,9 +210,35 @@ export function App() {
             <h2 className="text-lg font-semibold text-foreground">Analysis Output</h2>
           </div>
 
-          <pre className="flex-1 overflow-auto rounded-lg border border-border bg-muted/50 p-4 font-mono text-sm text-muted-foreground">
-            {analysisOutput ?? 'Waiting for workflow completion...'}
-          </pre>
+          {waitingForOutput ? (
+            <div className="flex flex-1 flex-col items-center justify-center gap-3 rounded-lg border border-border bg-muted/50 p-4 text-muted-foreground">
+              <span className="relative flex h-6 w-6">
+                <span className="absolute inline-flex h-full w-full animate-ping rounded-full bg-primary opacity-50" />
+                <span className="relative inline-flex h-6 w-6 rounded-full bg-primary/70" />
+              </span>
+              <p className="text-sm font-mono">Waiting for workflow completion...</p>
+            </div>
+          ) : analysisOutput ? (
+            <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
+              {ANALYSIS_SECTIONS.map(({ key, label }) => (
+                <div key={key} className="rounded-lg border border-border bg-muted/50 p-3">
+                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                    {label}
+                  </p>
+                  <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm text-foreground">
+                    {analysisOutput[key] != null
+                      ? JSON.stringify(analysisOutput[key], null, 2)
+                      : <span className="text-muted-foreground italic">—</span>
+                    }
+                  </pre>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <div className="flex flex-1 items-center justify-center rounded-lg border border-border bg-muted/50 p-4">
+              <p className="font-mono text-sm text-muted-foreground">Waiting for workflow completion...</p>
+            </div>
+          )}
         </section>
       </div>
     </div>
