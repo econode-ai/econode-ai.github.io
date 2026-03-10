@@ -168,7 +168,7 @@ The codebase follows a flat, minimal structure:
 
 ### n8n Webhook
 
-- **URL:** `https://n8n.econode.ai/webhook/start` (configurable in the UI)
+- **URL:** `https://nmudit.app.n8n.cloud/webhook-test/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07` (configurable in the UI)
 - **Method:** POST
 - **Content-Type:** `application/json`
 - **Expected Success Response:** `{ "message": "Workflow was started" }`
