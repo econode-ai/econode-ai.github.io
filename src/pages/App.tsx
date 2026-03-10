@@ -78,18 +78,18 @@ export function App() {
       setWaitingForOutput(false)
     }
 
-    // 1. Realtime subscription — catches rows inserted after subscribe() activates
+    // 1. Realtime subscription — catches rows inserted after subscribe() activates.
+    //    No server-side filter: filtering on a non-PK column requires REPLICA IDENTITY
+    //    FULL; without it the server filter silently drops all events. We match client-side.
     const channel = supabase
       .channel(`output-${currentRequestId}`)
       .on(
         'postgres_changes',
-        {
-          event: 'INSERT',
-          schema: 'public',
-          table: 'workflow_outputs',
-          filter: `request_id=eq.${currentRequestId}`,
-        },
-        (payload) => applyRow(payload.new as AnalysisOutput)
+        { event: 'INSERT', schema: 'public', table: 'workflow_outputs' },
+        (payload) => {
+          const row = payload.new as AnalysisOutput & { request_id: string }
+          if (row.request_id === currentRequestId) applyRow(row)
+        }
       )
       .subscribe()
 
