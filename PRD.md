@@ -102,7 +102,7 @@ GitHub Pages SPA support is handled by a `404.html` that encodes the path into a
 **Purpose:** Marketing landing page to introduce EcoNode AI and drive users to the app.
 
 **Sections:**
-1. **Hero** — Headline ("Low Cost Actionable Risk Analytics"), subtext about TNFD-ready profiles for SMEs, and two CTAs:
+1. **Hero** — Headline ("Low Cost Actionable Nature Risk Analytics"), subtext about TNFD-ready profiles for SMEs, and two CTAs:
    - "Get Started Free" → links to `/app`
    - "Learn More" → links to `/support`
 2. **Features Grid** — 4 cards (Automated Baseline Analysis, TNFD-Ready Reports, Fixable Risk Identification, Self-Serve Upgrades), each with a Lucide icon, title, and description.

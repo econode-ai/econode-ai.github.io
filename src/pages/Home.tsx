@@ -35,7 +35,7 @@ export function Home() {
         </div>
         <h1 className="max-w-3xl text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
           Low Cost{' '}
-          <span className="text-primary">Actionable Risk Analytics</span>
+          <span className="text-primary">Actionable Nature Risk Analytics</span>
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
           TNFD‑ready nature risk profiles for SMEs: automated baseline analysis + self‑serve upgrades that satisfy your bank and reveal fixable risks.
