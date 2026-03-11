@@ -9,18 +9,20 @@ The Workflow panel visualizes the sequence of processing stages that run after d
 | Element         | Details                                                    |
 |-----------------|------------------------------------------------------------|
 | Stage Cards     | Vertical list of rounded-border cards, one per stage       |
-| Stage Badge     | Numbered circle (1-5) on each card                         |
+| Stage Badge     | Numbered circle (1-7) on each card                         |
 | Activation      | Panel starts at `opacity-40`; becomes `opacity-100` when `workflowActive` is true |
 
 ## Workflow Stages
 
 Defined via the `WORKFLOW_STAGES` constant array (top-level in `App.tsx`):
 
-1. Data Ingestion
-2. Processing
-3. Validation
-4. Transformation
-5. Output Generation
+1. User Input Validation
+2. Nature Data Extraction
+3. Regulatory Analysis
+4. LLM Synthesis — Evidence Collection
+5. LLM Synthesis — Adaptation Strategies
+6. LLM Synthesis — Narrative Generation
+7. Final Output
 
 ## Stage Card Styling
 
@@ -47,7 +49,7 @@ Each card contains:
 
 ## Verification
 
-- [ ] All 5 workflow stage cards are visible with correct numbering (1-5)
+- [ ] All 7 workflow stage cards are visible with correct numbering (1-7)
 - [ ] Panel is visually dimmed (opacity-40) before workflow starts
 - [ ] Panel becomes fully visible (opacity-100) after Panel 1 sends successfully
 - [ ] Stage cards render with correct default styling
