@@ -1,5 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
-import { Check } from 'lucide-react'
+import { Check, ChevronDown } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const WORKFLOW_STAGES = [
@@ -58,6 +58,15 @@ export function App() {
   const [stageStatuses, setStageStatuses] = useState<StageStatus[]>(PENDING_STAGES)
   const [analysisOutput, setAnalysisOutput] = useState<AnalysisOutput | null>(null)
   const [waitingForOutput, setWaitingForOutput] = useState(false)
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
+
+  function toggleSection(key: string) {
+    setExpandedSections(prev => {
+      const next = new Set(prev)
+      next.has(key) ? next.delete(key) : next.add(key)
+      return next
+    })
+  }
 
   // ISO timestamp recorded the moment Send succeeds — used to filter for rows
   // newer than this run, regardless of what request_id n8n writes.
@@ -309,20 +318,35 @@ export function App() {
               <p className="text-sm font-mono">Waiting for workflow completion...</p>
             </div>
           ) : analysisOutput ? (
-            <div className="flex flex-1 flex-col gap-3 overflow-y-auto">
-              {ANALYSIS_SECTIONS.map(({ key, label }) => (
-                <div key={key} className="rounded-lg border border-border bg-muted/50 p-3">
-                  <p className="mb-2 text-xs font-semibold uppercase tracking-wide text-muted-foreground">
-                    {label}
-                  </p>
-                  <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm text-foreground">
-                    {analysisOutput[key] != null
-                      ? JSON.stringify(analysisOutput[key], null, 2)
-                      : <span className="text-muted-foreground italic">—</span>
-                    }
-                  </pre>
-                </div>
-              ))}
+            <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+              {ANALYSIS_SECTIONS.map(({ key, label }) => {
+                const isOpen = expandedSections.has(key)
+                return (
+                  <div key={key} className="rounded-lg border border-border bg-muted/50">
+                    <button
+                      onClick={() => toggleSection(key)}
+                      className="flex w-full items-center justify-between px-3 py-2.5 text-left"
+                    >
+                      <span className="text-xs font-semibold uppercase tracking-wide text-muted-foreground">
+                        {label}
+                      </span>
+                      <ChevronDown
+                        className={`h-3.5 w-3.5 shrink-0 text-muted-foreground transition-transform ${isOpen ? 'rotate-180' : ''}`}
+                      />
+                    </button>
+                    {isOpen && (
+                      <div className="border-t border-border px-3 pb-3 pt-2">
+                        <pre className="overflow-x-auto whitespace-pre-wrap font-mono text-sm text-foreground">
+                          {analysisOutput[key] != null
+                            ? JSON.stringify(analysisOutput[key], null, 2)
+                            : <span className="italic text-muted-foreground">—</span>
+                          }
+                        </pre>
+                      </div>
+                    )}
+                  </div>
+                )
+              })}
             </div>
           ) : (
             <div className="flex flex-1 items-center justify-center rounded-lg border border-border bg-muted/50 p-4">
