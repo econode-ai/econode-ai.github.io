@@ -2,11 +2,13 @@ import { useEffect, useRef, useState } from 'react'
 import { supabase } from '@/lib/supabase'
 
 const WORKFLOW_STAGES = [
-  'Data Ingestion',
-  'Processing',
-  'Validation',
-  'Transformation',
-  'Output Generation',
+  'User Input Validation',
+  'Nature Data Extraction',
+  'Regulatory Analysis',
+  'LLM Synthesis — Evidence Collection',
+  'LLM Synthesis — Adaptation Strategies',
+  'LLM Synthesis — Narrative Generation',
+  'Final Output',
 ]
 
 const DEFAULT_WEBHOOK_URL = 'https://n8n.econode.ai/webhook/start'
