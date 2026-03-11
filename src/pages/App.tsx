@@ -1,4 +1,5 @@
 import { useEffect, useRef, useState } from 'react'
+import { Check } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
 
 const WORKFLOW_STAGES = [
@@ -19,6 +20,8 @@ const EXAMPLE_JSON = `{
     { "timestamp": "2026-03-09T10:00:00Z", "kwh": 42.5 }
   ]
 }`
+
+type StageStatus = 'pending' | 'running' | 'completed'
 
 type AnalysisOutput = {
   asset: unknown
@@ -45,13 +48,14 @@ const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
 ]
 
 const POLL_INTERVAL_MS = 3000
+const PENDING_STAGES: StageStatus[] = WORKFLOW_STAGES.map(() => 'pending')
 
 export function App() {
   const [jsonBody, setJsonBody] = useState(EXAMPLE_JSON)
   const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL)
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ type: 'idle' })
   const [workflowActive, setWorkflowActive] = useState(false)
-  const [currentStage, _setCurrentStage] = useState<number | null>(null)
+  const [stageStatuses, setStageStatuses] = useState<StageStatus[]>(PENDING_STAGES)
   const [analysisOutput, setAnalysisOutput] = useState<AnalysisOutput | null>(null)
   const [waitingForOutput, setWaitingForOutput] = useState(false)
 
@@ -59,17 +63,60 @@ export function App() {
   // newer than this run, regardless of what request_id n8n writes.
   const sentAtRef = useRef<string | null>(null)
 
+  // Advance stage N to completed and mark N+1 as running (additive — never goes backwards)
+  function applyStage(stage: number) {
+    setStageStatuses(prev => {
+      if (prev[stage] === 'completed') return prev // already know about this
+      const next = [...prev]
+      next[stage] = 'completed'
+      if (stage + 1 < WORKFLOW_STAGES.length && next[stage + 1] !== 'completed') {
+        next[stage + 1] = 'running'
+      }
+      return next
+    })
+  }
+
+  // Apply a batch of completed stage indices (from polling) — additive
+  function applyStages(completedNs: number[]) {
+    if (completedNs.length === 0) return
+    setStageStatuses(prev => {
+      const next = [...prev]
+      let changed = false
+      let maxCompleted = -1
+      for (const n of completedNs) {
+        if (next[n] !== 'completed') {
+          next[n] = 'completed'
+          changed = true
+        }
+        if (n > maxCompleted) maxCompleted = n
+      }
+      if (!changed) return prev
+      const nextRunning = maxCompleted + 1
+      if (nextRunning < WORKFLOW_STAGES.length && next[nextRunning] === 'pending') {
+        next[nextRunning] = 'running'
+      }
+      return next
+    })
+  }
+
   useEffect(() => {
     if (!workflowActive) return
 
+    // Stage 0 starts running immediately when the workflow is triggered
+    setStageStatuses(prev => {
+      const next = [...prev] as StageStatus[]
+      if (next[0] !== 'completed') next[0] = 'running'
+      return next
+    })
     setWaitingForOutput(true)
     setAnalysisOutput(null)
 
-    let settled = false
+    let outputSettled = false
+    const sentAt = sentAtRef.current
 
-    function applyRow(row: AnalysisOutput) {
-      if (settled) return
-      settled = true
+    function applyOutput(row: AnalysisOutput) {
+      if (outputSettled) return
+      outputSettled = true
       setAnalysisOutput({
         asset:                  row.asset,
         nature_dependency:      row.nature_dependency,
@@ -82,37 +129,60 @@ export function App() {
         explainability_pack:    row.explainability_pack,
       })
       setWaitingForOutput(false)
+      // Mark all stages complete when final output arrives
+      setStageStatuses(WORKFLOW_STAGES.map(() => 'completed'))
     }
 
-    // 1. Realtime — fires immediately when any row is inserted after subscription activates
-    const channel = supabase
+    // --- Realtime: stage progress ---
+    const progressChannel = supabase
+      .channel('workflow-progress-watch')
+      .on(
+        'postgres_changes',
+        { event: 'INSERT', schema: 'public', table: 'workflow_progress' },
+        (payload) => applyStage((payload.new as { stage: number }).stage)
+      )
+      .subscribe()
+
+    // --- Realtime: final output ---
+    const outputChannel = supabase
       .channel('workflow-output-watch')
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'workflow_outputs' },
-        (payload) => applyRow(payload.new as AnalysisOutput)
+        (payload) => applyOutput(payload.new as AnalysisOutput)
       )
       .subscribe()
 
-    // 2. Polling fallback every 3 s — queries for the most recent row inserted
-    //    after the workflow was triggered, in case the Realtime event is missed
-    const sentAt = sentAtRef.current
+    // --- Polling fallback every 3 s ---
     const interval = setInterval(async () => {
-      const query = supabase
-        .from('workflow_outputs')
-        .select('asset,nature_dependency,tnfd_scenario_frame,financial_impact,evidence_synthesis,adaptation_strategy,stakeholder_narratives,evaluation_result,explainability_pack')
-        .order('created_at', { ascending: false })
-        .limit(1)
+      // Check stage progress
+      let stagesQuery = supabase
+        .from('workflow_progress')
+        .select('stage')
+        .order('stage', { ascending: true })
+      if (sentAt) stagesQuery = stagesQuery.gte('created_at', sentAt)
+      const { data: stagesData } = await stagesQuery
+      if (stagesData && stagesData.length > 0) {
+        applyStages(stagesData.map((r: { stage: number }) => r.stage))
+      }
 
-      if (sentAt) query.gte('created_at', sentAt)
-
-      const { data } = await query.maybeSingle()
-      if (data) applyRow(data as AnalysisOutput)
+      // Check final output
+      if (!outputSettled) {
+        let outputQuery = supabase
+          .from('workflow_outputs')
+          .select('asset,nature_dependency,tnfd_scenario_frame,financial_impact,evidence_synthesis,adaptation_strategy,stakeholder_narratives,evaluation_result,explainability_pack')
+          .order('created_at', { ascending: false })
+          .limit(1)
+        if (sentAt) outputQuery = outputQuery.gte('created_at', sentAt)
+        const { data: outputData } = await outputQuery.maybeSingle()
+        if (outputData) applyOutput(outputData as AnalysisOutput)
+      }
     }, POLL_INTERVAL_MS)
 
     return () => {
-      settled = true
-      supabase.removeChannel(channel)
+      outputSettled = true
+      supabase.removeChannel(progressChannel)
+      supabase.removeChannel(outputChannel)
       clearInterval(interval)
     }
   }, [workflowActive])
@@ -120,6 +190,8 @@ export function App() {
   async function handleSend() {
     setStatus({ type: 'loading' })
     setWorkflowActive(false)
+    setStageStatuses(PENDING_STAGES)
+    setAnalysisOutput(null)
     try {
       const parsed = JSON.parse(jsonBody)
       const requestId = crypto.randomUUID()
@@ -192,21 +264,32 @@ export function App() {
           </div>
 
           <div className="flex flex-col gap-3">
-            {WORKFLOW_STAGES.map((stage, i) => (
-              <div
-                key={stage}
-                className={`flex items-center gap-3 rounded-lg border px-4 py-3 transition-colors ${
-                  currentStage === i
-                    ? 'border-primary bg-primary/10 text-foreground'
-                    : 'border-border bg-muted/50 text-muted-foreground'
-                }`}
-              >
-                <span className="flex h-6 w-6 items-center justify-center rounded-full border border-current text-xs font-medium">
-                  {i + 1}
-                </span>
-                <span className="text-sm font-medium">{stage}</span>
-              </div>
-            ))}
+            {WORKFLOW_STAGES.map((stage, i) => {
+              const s = stageStatuses[i]
+              return (
+                <div
+                  key={stage}
+                  className={`flex items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${
+                    s === 'completed'
+                      ? 'border-green-500 bg-green-500/10 text-foreground'
+                      : s === 'running'
+                      ? 'stage-running border-blue-500 bg-blue-500/5 text-foreground'
+                      : 'border-transparent border bg-muted/50 text-muted-foreground'
+                  }`}
+                >
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium ${
+                    s === 'completed'
+                      ? 'border-green-500 bg-green-500 text-white'
+                      : s === 'running'
+                      ? 'border-blue-500 text-blue-500'
+                      : 'border-current'
+                  }`}>
+                    {s === 'completed' ? <Check className="h-3.5 w-3.5" /> : i + 1}
+                  </span>
+                  <span className="text-sm font-medium">{stage}</span>
+                </div>
+              )
+            })}
           </div>
         </section>
 
