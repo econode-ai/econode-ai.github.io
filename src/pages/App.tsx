@@ -12,7 +12,7 @@ const WORKFLOW_STAGES = [
   'Final Output',
 ]
 
-const DEFAULT_WEBHOOK_URL = 'https://n8n.econode.ai/webhook/start'
+const DEFAULT_WEBHOOK_URL = 'https://nmudit.app.n8n.cloud/webhook-test/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07'
 
 const EXAMPLE_JSON = `{
   "source": "solar_panel_array_1",
@@ -52,7 +52,7 @@ const PENDING_STAGES: StageStatus[] = WORKFLOW_STAGES.map(() => 'pending')
 
 export function App() {
   const [jsonBody, setJsonBody] = useState(EXAMPLE_JSON)
-  const [webhookUrl, setWebhookUrl] = useState(DEFAULT_WEBHOOK_URL)
+  const [webhookUrl] = useState(DEFAULT_WEBHOOK_URL)
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ type: 'idle' })
   const [workflowActive, setWorkflowActive] = useState(false)
   const [stageStatuses, setStageStatuses] = useState<StageStatus[]>(PENDING_STAGES)
@@ -232,14 +232,6 @@ export function App() {
             <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">1</span>
             <h2 className="text-lg font-semibold text-foreground">Input</h2>
           </div>
-
-          <label className="mb-1 text-sm font-medium text-muted-foreground">Webhook URL</label>
-          <input
-            type="url"
-            value={webhookUrl}
-            onChange={(e) => setWebhookUrl(e.target.value)}
-            className="mb-4 rounded-md border border-border bg-background px-3 py-2 text-sm text-foreground focus:outline-none focus:ring-2 focus:ring-primary"
-          />
 
           <label className="mb-1 text-sm font-medium text-muted-foreground">JSON Body</label>
           <textarea
