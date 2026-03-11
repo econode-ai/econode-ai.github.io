@@ -136,12 +136,13 @@ export const supabase = createClient(
 
 ### State
 
-| State            | Type                   | Default | Description |
-|------------------|------------------------|---------|-------------|
-| `workflowActive` | `boolean`              | `false` | Set to `true` when n8n acknowledges the POST; triggers the Realtime+poll effect |
-| `analysisOutput` | `AnalysisOutput\|null` | `null`  | Object with one key per analysis column; `null` shows placeholder |
-| `waitingForOutput` | `boolean`            | `false` | `true` between workflow start and first row received; shows spinner |
-| `sentAtRef`      | `useRef<string\|null>` | `null`  | ISO timestamp recorded when Send succeeds; used as `created_at` lower bound in the poll query |
+| State              | Type                   | Default | Description |
+|--------------------|------------------------|---------|-------------|
+| `workflowActive`   | `boolean`              | `false` | Set to `true` when n8n acknowledges the POST; triggers the Realtime+poll effect |
+| `analysisOutput`   | `AnalysisOutput\|null` | `null`  | Object with one key per analysis column; `null` shows placeholder |
+| `waitingForOutput` | `boolean`              | `false` | `true` between workflow start and first row received; shows spinner |
+| `expandedSections` | `Set<string>`          | empty   | Tracks which analysis sub-sections are expanded; all collapsed by default |
+| `sentAtRef`        | `useRef<string\|null>` | `null`  | ISO timestamp recorded when Send succeeds; used as `created_at` lower bound in the poll query |
 
 ### `AnalysisOutput` type
 
@@ -222,7 +223,9 @@ body: JSON.stringify({ ...parsed, requestId })
 
 | Element       | Details |
 |---------------|---------|
-| Output area   | 9 labeled cards, one per analysis column, each with a `<pre>` block |
+| Output area   | 9 collapsible sub-sections, one per analysis column, all collapsed by default |
+| Section header| `<button>` with uppercase label + `ChevronDown` icon (rotates 180° when expanded) |
+| Section body  | `<pre>` block with JSON content, shown only when expanded |
 | Placeholder   | Centered "Waiting for workflow completion..." before workflow starts |
 | Loading state | Pulsing green dot + text while `waitingForOutput` is true |
 | Opacity       | `opacity-40` before `workflowActive`; `opacity-100` after |
@@ -252,6 +255,8 @@ body: JSON.stringify({ ...parsed, requestId })
 - [x] Channel and interval cleaned up on effect teardown
 - [x] Panel dimmed (`opacity-40`) before workflow starts
 - [x] Spinner shown while `waitingForOutput`
-- [x] 9 sub-sections rendered, one per analysis column
+- [x] 9 collapsible sub-sections rendered, all collapsed by default
+- [x] ChevronDown toggle per section (rotates when open)
+- [x] `expandedSections` state tracks open/closed per section key
 - [ ] n8n "Set Request ID" node correctly forwards `requestId` from POST body
 - [ ] `REPLICA IDENTITY FULL` set (optional — enables server-side Realtime filter)

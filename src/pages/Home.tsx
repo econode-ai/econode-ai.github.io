@@ -1,26 +1,26 @@
 import { Link } from 'react-router-dom'
-import { Leaf, Zap, BarChart3, Shield, Globe } from 'lucide-react'
+import { Leaf, FileSearch, BarChart3, Shield, Scale } from 'lucide-react'
 
 const features = [
   {
-    icon: Zap,
-    title: 'Real-Time Optimization',
-    description: 'AI-driven analysis continuously monitors and optimizes your energy consumption patterns.',
+    icon: FileSearch,
+    title: 'Automated Baseline Analysis',
+    description: 'AI-powered assessment of your nature-related risks and dependencies — no consultants needed.',
   },
   {
     icon: BarChart3,
-    title: 'Smart Analytics',
-    description: 'Deep insights into usage trends, cost projections, and efficiency opportunities.',
+    title: 'TNFD-Ready Reports',
+    description: 'Generate disclosure-ready profiles that satisfy lender requirements and regulatory frameworks.',
   },
   {
     icon: Shield,
-    title: 'Reliable & Secure',
-    description: 'Enterprise-grade infrastructure with end-to-end encryption and uptime guarantees.',
+    title: 'Fixable Risk Identification',
+    description: 'Pinpoint actionable risks you can address now, with clear remediation pathways.',
   },
   {
-    icon: Globe,
-    title: 'Carbon Footprint Tracking',
-    description: 'Measure and reduce your environmental impact with automated sustainability reporting.',
+    icon: Scale,
+    title: 'Self-Serve Upgrades',
+    description: 'Start with a free baseline and upgrade when you need deeper analysis or ongoing monitoring.',
   },
 ]
 
@@ -31,14 +31,14 @@ export function Home() {
       <section className="relative flex flex-col items-center justify-center px-6 py-32 text-center">
         <div className="mb-6 flex items-center justify-center gap-2 rounded-full border border-border bg-muted px-4 py-1.5 text-sm text-muted-foreground">
           <Leaf className="h-3.5 w-3.5 text-primary" />
-          <span>AI-Powered Energy Intelligence</span>
+          <span>AI-Powered Nature Risk Intelligence</span>
         </div>
         <h1 className="max-w-3xl text-5xl font-bold tracking-tight text-foreground sm:text-6xl">
-          Smarter Energy,{' '}
-          <span className="text-primary">Greener Future</span>
+          Low Cost{' '}
+          <span className="text-primary">Actionable Risk Analytics</span>
         </h1>
         <p className="mt-6 max-w-xl text-lg text-muted-foreground">
-          EcoNode AI helps businesses and communities optimize energy usage, cut costs, and reduce their carbon footprint — all powered by intelligent automation.
+          TNFD‑ready nature risk profiles for SMEs: automated baseline analysis + self‑serve upgrades that satisfy your bank and reveal fixable risks.
         </p>
         <div className="mt-10 flex flex-col gap-4 sm:flex-row">
           <Link
@@ -61,10 +61,10 @@ export function Home() {
         <div className="container mx-auto max-w-6xl">
           <div className="mb-12 text-center">
             <h2 className="text-3xl font-bold tracking-tight text-foreground">
-              Everything you need to go green
+              Everything you need for nature risk compliance
             </h2>
             <p className="mt-3 text-muted-foreground">
-              A complete platform for modern energy management.
+              A complete platform for automated TNFD analysis and disclosure.
             </p>
           </div>
           <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
@@ -88,10 +88,10 @@ export function Home() {
       <section className="px-6 py-24 text-center">
         <div className="container mx-auto max-w-2xl">
           <h2 className="text-3xl font-bold tracking-tight text-foreground">
-            Ready to optimize your energy?
+            Ready to understand your nature risk?
           </h2>
           <p className="mt-4 text-muted-foreground">
-            Join thousands of organizations already saving energy and money with EcoNode AI.
+            Get your TNFD-ready baseline analysis in minutes — no consultants, no complexity.
           </p>
           <Link
             to="/app"

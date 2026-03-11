@@ -12,7 +12,7 @@ export function Footer() {
               <span>EcoNode AI</span>
             </Link>
             <p className="text-sm text-muted-foreground max-w-xs">
-              Intelligent energy optimization for a sustainable future.
+              Low cost actionable risk analytics for SMEs.
             </p>
           </div>
 

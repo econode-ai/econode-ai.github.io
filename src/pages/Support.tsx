@@ -2,9 +2,9 @@ import { Mail, MessageCircle, FileText } from 'lucide-react'
 
 const faqs = [
   {
-    question: 'How does EcoNode AI optimize energy usage?',
+    question: 'What does EcoNode AI do?',
     answer:
-      'EcoNode AI uses machine learning models trained on your historical usage data, local weather patterns, and grid pricing signals to automatically schedule high-consumption tasks during low-cost, low-carbon periods.',
+      'EcoNode AI provides low-cost, automated nature risk analytics for SMEs. It generates TNFD-ready baseline profiles that reveal fixable risks and satisfy lender disclosure requirements — all without needing external consultants.',
   },
   {
     question: 'Is my data secure?',
@@ -12,14 +12,14 @@ const faqs = [
       'Yes. All data is encrypted in transit and at rest. We never sell your data to third parties, and you retain full ownership of your usage data.',
   },
   {
-    question: 'What integrations are supported?',
+    question: 'What is TNFD and why does it matter?',
     answer:
-      'EcoNode AI integrates with smart meters, building management systems, EV chargers, solar inverters, and major IoT platforms via REST and MQTT.',
+      'The Taskforce on Nature-related Financial Disclosures (TNFD) is a framework for organisations to report and act on nature-related risks and opportunities. Banks and investors increasingly expect TNFD-aligned disclosures from the businesses they fund.',
   },
   {
     question: 'How do I get started?',
     answer:
-      'Click "Get Started Free" from the home page, create an account, and follow the onboarding wizard to connect your first energy device or meter.',
+      'Click "Get Started Free" from the home page. You can run a free baseline analysis immediately — no account or credit card required.',
   },
 ]
 

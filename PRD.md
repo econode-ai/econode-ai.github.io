@@ -2,7 +2,7 @@
 
 ## 1. Project Overview
 
-**EcoNode AI** is an AI-powered energy intelligence platform that helps businesses and communities optimize energy usage, cut costs, and reduce their carbon footprint through intelligent automation.
+**EcoNode AI** is an AI-powered nature risk analytics platform that provides TNFD‑ready risk profiles for SMEs: automated baseline analysis + self‑serve upgrades that satisfy lender disclosure requirements and reveal fixable risks.
 
 The website serves as both a marketing landing page and the entry point to the core application interface. It is deployed to GitHub Pages at `econode-ai.github.io`.
 
@@ -102,11 +102,11 @@ GitHub Pages SPA support is handled by a `404.html` that encodes the path into a
 **Purpose:** Marketing landing page to introduce EcoNode AI and drive users to the app.
 
 **Sections:**
-1. **Hero** — Headline ("Smarter Energy, Greener Future"), subtext, and two CTAs:
+1. **Hero** — Headline ("Low Cost Actionable Risk Analytics"), subtext about TNFD-ready profiles for SMEs, and two CTAs:
    - "Get Started Free" → links to `/app`
    - "Learn More" → links to `/support`
-2. **Features Grid** — 4 cards (Real-Time Optimization, Smart Analytics, Reliable & Secure, Carbon Footprint Tracking), each with a Lucide icon, title, and description.
-3. **CTA Banner** — "Ready to optimize your energy?" with "Start for Free" button → `/app`.
+2. **Features Grid** — 4 cards (Automated Baseline Analysis, TNFD-Ready Reports, Fixable Risk Identification, Self-Serve Upgrades), each with a Lucide icon, title, and description.
+3. **CTA Banner** — "Ready to understand your nature risk?" with "Start for Free" button → `/app`.
 
 ### 6.2 App Page (`/app`) — 3-Panel Layout
 
@@ -128,26 +128,29 @@ Webhook URL input + JSON body editor + Send button. POSTs to the n8n webhook and
 
 > Full specification: [workflow-panel.md](./workflow-panel.md)
 
-Vertical list of 5 stage cards (Data Ingestion → Output Generation). Starts dimmed; activates when Panel 1 succeeds. Prepared for real-time stage highlighting via `currentStage` state.
+Vertical list of 7 stage cards (User Input Validation → Final Output) with live status tracking via Supabase Realtime. Blue pulsing border for running stage, green static border + checkmark for completed. Starts dimmed; activates when Panel 1 succeeds.
 
 #### Panel 3 — Analysis
 
 > Full specification: [analysis-panel.md](./analysis-panel.md)
 
-`<pre>` block for JSON output display. Shows placeholder text until workflow results are available. Starts dimmed; activates with Panel 2.
+9 collapsible sub-sections (one per analysis column), each with a ChevronDown toggle, collapsed by default. Receives results via Supabase Realtime + 3s polling fallback. Starts dimmed; activates with Panel 2.
 
 #### State Management
 
 All state is local to the `App` component via `useState`:
 
-| State            | Type                                           | Default                  |
-|------------------|------------------------------------------------|--------------------------|
-| `jsonBody`       | `string`                                       | `EXAMPLE_JSON`           |
-| `webhookUrl`     | `string`                                       | `DEFAULT_WEBHOOK_URL`    |
-| `status`         | `{ type: 'idle'|'loading'|'success'|'error'; message?: string }` | `{ type: 'idle' }` |
-| `workflowActive` | `boolean`                                      | `false`                  |
-| `currentStage`   | `number | null`                                | `null`                   |
-| `analysisOutput` | `string | null`                                | `null`                   |
+| State              | Type                                           | Default                  |
+|--------------------|------------------------------------------------|--------------------------|
+| `jsonBody`         | `string`                                       | `EXAMPLE_JSON`           |
+| `webhookUrl`       | `string`                                       | `DEFAULT_WEBHOOK_URL`    |
+| `status`           | `{ type: 'idle'\|'loading'\|'success'\|'error'; message?: string }` | `{ type: 'idle' }` |
+| `workflowActive`   | `boolean`                                      | `false`                  |
+| `stageStatuses`    | `StageStatus[]`                                | all `'pending'`          |
+| `analysisOutput`   | `AnalysisOutput \| null`                       | `null`                   |
+| `waitingForOutput` | `boolean`                                      | `false`                  |
+| `expandedSections` | `Set<string>`                                  | empty set                |
+| `sentAtRef`        | `useRef<string \| null>`                       | `null`                   |
 
 ---
 
@@ -168,7 +171,7 @@ The codebase follows a flat, minimal structure:
 
 ### n8n Webhook
 
-- **URL:** `https://nmudit.app.n8n.cloud/webhook-test/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07` (configurable in the UI)
+- **URL:** `https://n8n.econode.ai/webhook/start` (configurable in the UI)
 - **Method:** POST
 - **Content-Type:** `application/json`
 - **Expected Success Response:** `{ "message": "Workflow was started" }`
@@ -187,16 +190,16 @@ The codebase follows a flat, minimal structure:
 
 ## 10. Future Roadmap / Prepared Extension Points
 
-| Feature                     | Current State                        | Next Step                                           |
-|-----------------------------|--------------------------------------|-----------------------------------------------------|
-| Workflow stage tracking     | `currentStage` state exists, unused  | Connect to real-time status updates (SSE/polling)   |
-| Analysis output             | `analysisOutput` state exists, unused| Populate from workflow completion callback/polling   |
-| Dark mode                   | Tailwind `darkMode: ['class']` configured | Add theme toggle in Header                     |
-| Authentication              | None                                 | Add auth layer before `/app` route                  |
-| Panel sub-components        | Single `App.tsx` file                | Extract when complexity warrants it                 |
-| Webhook auth                | No auth headers sent                 | Add Bearer token / API key support                  |
-| Error retry                 | Manual only (click Send again)       | Add retry button or auto-retry with backoff         |
-| Workflow stage customization| Hardcoded `WORKFLOW_STAGES` array    | Make configurable per workflow/user                 |
+| Feature                     | Current State                                   | Next Step                                           |
+|-----------------------------|------------------------------------------------|-----------------------------------------------------|
+| Workflow stage tracking     | Live via Supabase Realtime + 3s poll fallback   | Fix n8n `requestId` forwarding for multi-user       |
+| Analysis output             | Live via Supabase Realtime + 3s poll fallback   | JSON syntax highlighting, copy/download buttons     |
+| Dark mode                   | Tailwind `darkMode: ['class']` configured       | Add theme toggle in Header                          |
+| Authentication              | None                                            | Add auth layer before `/app` route                  |
+| Panel sub-components        | Single `App.tsx` file                           | Extract when complexity warrants it                 |
+| Webhook auth                | No auth headers sent                            | Add Bearer token / API key support                  |
+| Error retry                 | Manual only (click Send again)                  | Add retry button or auto-retry with backoff         |
+| Workflow stage customization| Hardcoded `WORKFLOW_STAGES` array               | Make configurable per workflow/user                 |
 
 ---
 
@@ -209,8 +212,11 @@ The codebase follows a flat, minimal structure:
 - [ ] Panel 1: "Send" button fires a POST request to the webhook URL
 - [ ] Panel 1: Invalid JSON shows "Invalid JSON" error
 - [ ] Panel 1: Successful response activates Panels 2 and 3 (opacity change)
-- [ ] Panel 2: All 5 workflow stage cards are visible with numbering
+- [ ] Panel 2: All 7 workflow stage cards are visible with numbering
+- [ ] Panel 2: Stage 0 shows blue running border immediately after Send
+- [ ] Panel 2: Completed stages show green border + checkmark
 - [ ] Panel 3: Shows "Waiting for workflow completion..." placeholder
+- [ ] Panel 3: 9 collapsible sub-sections shown after output received (collapsed by default)
 - [ ] "Get Started Free" button on Home page navigates to `/app`
 - [ ] "Start for Free" CTA on Home page navigates to `/app`
 - [ ] All existing routes (`/`, `/support`, `/privacy`, `/terms`) still work
