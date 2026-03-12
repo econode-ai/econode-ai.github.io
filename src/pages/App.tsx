@@ -12,7 +12,7 @@ const WORKFLOW_STAGES = [
   'Final Output',
 ]
 
-const DEFAULT_WEBHOOK_URL = 'https://nmudit.app.n8n.cloud/webhook-test/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07'
+const DEFAULT_WEBHOOK_URL = 'https://nmudit.app.n8n.cloud/webhook/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07'
 
 const EXAMPLE_JSON = `{
   "source": "solar_panel_array_1",
@@ -36,15 +36,15 @@ type AnalysisOutput = {
 }
 
 const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
-  { key: 'asset',                  label: 'Asset' },
-  { key: 'nature_dependency',      label: 'Nature Dependency' },
-  { key: 'tnfd_scenario_frame',    label: 'TNFD Scenario Frame' },
-  { key: 'financial_impact',       label: 'Financial Impact' },
-  { key: 'evidence_synthesis',     label: 'Evidence Synthesis' },
-  { key: 'adaptation_strategy',    label: 'Adaptation Strategy' },
+  { key: 'asset', label: 'Asset' },
+  { key: 'nature_dependency', label: 'Nature Dependency' },
+  { key: 'tnfd_scenario_frame', label: 'TNFD Scenario Frame' },
+  { key: 'financial_impact', label: 'Financial Impact' },
+  { key: 'evidence_synthesis', label: 'Evidence Synthesis' },
+  { key: 'adaptation_strategy', label: 'Adaptation Strategy' },
   { key: 'stakeholder_narratives', label: 'Stakeholder Narratives' },
-  { key: 'evaluation_result',      label: 'Evaluation Result' },
-  { key: 'explainability_pack',    label: 'Explainability Pack' },
+  { key: 'evaluation_result', label: 'Evaluation Result' },
+  { key: 'explainability_pack', label: 'Explainability Pack' },
 ]
 
 const POLL_INTERVAL_MS = 3000
@@ -127,15 +127,15 @@ export function App() {
       if (outputSettled) return
       outputSettled = true
       setAnalysisOutput({
-        asset:                  row.asset,
-        nature_dependency:      row.nature_dependency,
-        tnfd_scenario_frame:    row.tnfd_scenario_frame,
-        financial_impact:       row.financial_impact,
-        evidence_synthesis:     row.evidence_synthesis,
-        adaptation_strategy:    row.adaptation_strategy,
+        asset: row.asset,
+        nature_dependency: row.nature_dependency,
+        tnfd_scenario_frame: row.tnfd_scenario_frame,
+        financial_impact: row.financial_impact,
+        evidence_synthesis: row.evidence_synthesis,
+        adaptation_strategy: row.adaptation_strategy,
         stakeholder_narratives: row.stakeholder_narratives,
-        evaluation_result:      row.evaluation_result,
-        explainability_pack:    row.explainability_pack,
+        evaluation_result: row.evaluation_result,
+        explainability_pack: row.explainability_pack,
       })
       setWaitingForOutput(false)
       // Mark all stages complete when final output arrives
@@ -270,21 +270,19 @@ export function App() {
               return (
                 <div
                   key={stage}
-                  className={`flex items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${
-                    s === 'completed'
+                  className={`flex items-center gap-3 rounded-lg border-2 px-4 py-3 transition-all ${s === 'completed'
                       ? 'border-green-500 bg-green-500/10 text-foreground'
                       : s === 'running'
-                      ? 'stage-running border-blue-500 bg-blue-500/5 text-foreground'
-                      : 'border-transparent border bg-muted/50 text-muted-foreground'
-                  }`}
+                        ? 'stage-running border-blue-500 bg-blue-500/5 text-foreground'
+                        : 'border-transparent border bg-muted/50 text-muted-foreground'
+                    }`}
                 >
-                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium ${
-                    s === 'completed'
+                  <span className={`flex h-6 w-6 shrink-0 items-center justify-center rounded-full border text-xs font-medium ${s === 'completed'
                       ? 'border-green-500 bg-green-500 text-white'
                       : s === 'running'
-                      ? 'border-blue-500 text-blue-500'
-                      : 'border-current'
-                  }`}>
+                        ? 'border-blue-500 text-blue-500'
+                        : 'border-current'
+                    }`}>
                     {s === 'completed' ? <Check className="h-3.5 w-3.5" /> : i + 1}
                   </span>
                   <span className="text-sm font-medium">{stage}</span>
