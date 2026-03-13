@@ -119,10 +119,10 @@ type AnalysisOutput = {
 }
 
 const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
-  { key: 'nature_dependency', label: 'Nature Dependency' },
-  { key: 'financial_impact', label: 'Financial Impact' },
-  { key: 'stakeholder_narratives', label: 'Stakeholder Narratives' },
-  { key: 'adaptation_strategy', label: 'Adaptation Strategy' },
+  // { key: 'nature_dependency', label: 'Nature Dependency' },
+  // { key: 'financial_impact', label: 'Financial Impact' },
+  // { key: 'stakeholder_narratives', label: 'Stakeholder Narratives' },
+  // { key: 'adaptation_strategy', label: 'Adaptation Strategy' },
   { key: 'tnfd_scenario_frame', label: 'TNFD Scenario Frame' },
   { key: 'evidence_synthesis', label: 'Evidence Synthesis' },
   { key: 'evaluation_result', label: 'Evaluation Result' },
@@ -213,12 +213,21 @@ function ExecutiveSummaryCard({ data }: { data: AnalysisOutput }) {
       : rawRecommendedAction
   )
 
+  const [open, setOpen] = useState(true)
+
   return (
     <div id="exec-summary-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
       {/* Gradient accent bar */}
       <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500" />
-      <div className="p-6">
-        <h2 className="mb-5 text-xl font-bold text-foreground">1. Executive Summary</h2>
+      <div
+        className="flex cursor-pointer select-none items-center justify-between px-6 py-4"
+        onClick={() => setOpen(o => !o)}
+      >
+        <h2 className="text-xl font-bold text-foreground">Executive Summary</h2>
+        {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
+      </div>
+      {open && (
+      <div className="px-6 pb-6">
 
         {/* KPI row */}
         <div className="mb-5 grid grid-cols-4 gap-3">
@@ -282,6 +291,7 @@ function ExecutiveSummaryCard({ data }: { data: AnalysisOutput }) {
           </div>
         )}
       </div>
+      )}
     </div>
   )
 }
@@ -290,10 +300,10 @@ function ExecutiveSummaryCard({ data }: { data: AnalysisOutput }) {
 
 function strengthColor(strength: string): string {
   switch (strength?.toLowerCase()) {
-    case 'high':   return 'text-red-600 font-semibold'
+    case 'high': return 'text-red-600 font-semibold'
     case 'medium': return 'text-orange-500 font-semibold'
-    case 'low':    return 'text-green-600 font-semibold'
-    default:       return 'text-foreground'
+    case 'low': return 'text-green-600 font-semibold'
+    default: return 'text-foreground'
   }
 }
 
@@ -308,11 +318,20 @@ function NatureDependencyCard({ data }: { data: AnalysisOutput }) {
   const sensitivityFlag: string = nd.sensitivity_flag ?? '—'
   const envCtx = nd.environmental_context as Record<string, any> | undefined
 
+  const [open, setOpen] = useState(true)
+
   return (
     <div id="nature-dependency-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
       <div className="h-1.5 bg-gradient-to-r from-teal-500 via-emerald-500 to-green-400" />
-      <div className="p-6">
-        <h2 className="mb-4 text-xl font-bold text-foreground">3. Nature Dependencies</h2>
+      <div
+        className="flex cursor-pointer select-none items-center justify-between px-6 py-4"
+        onClick={() => setOpen(o => !o)}
+      >
+        <h2 className="text-xl font-bold text-foreground">Nature Dependencies</h2>
+        {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
+      </div>
+      {open && (
+      <div className="px-6 pb-6">
 
         {/* Summary sentence */}
         <p className="mb-5 text-sm leading-relaxed text-foreground">
@@ -370,6 +389,7 @@ function NatureDependencyCard({ data }: { data: AnalysisOutput }) {
           </div>
         </div>
       </div>
+      )}
     </div>
   )
 }
@@ -378,6 +398,413 @@ const PANEL_LABELS: Record<PanelId, string> = {
   1: 'Input',
   2: 'Workflow',
   3: 'Analysis Output',
+}
+
+// ─── Financial Impact ─────────────────────────────────────────────────────────
+
+function fmtEur(val: number): string {
+  if (val >= 1_000_000) return `€${(val / 1_000_000).toFixed(1)}M`
+  if (val >= 1_000) return `€${Math.round(val / 1_000)}K`
+  return `€${val.toLocaleString()}`
+}
+
+function FinancialImpactCard({ data }: { data: AnalysisOutput }) {
+  const fi = data.financial_impact as Record<string, any> | null
+  if (!fi) return null
+
+  const headline: string = fi.headline?.headline_text ?? ''
+  const tiers: any[] = fi.totals_by_tier ?? []
+  const topDrivers: any[] = fi.top_drivers ?? []
+
+  // Build ordered tier columns: base → adverse → severe
+  const tierOrder = ['base', 'adverse', 'severe']
+  const tierMap: Record<string, any> = {}
+  for (const t of tiers) tierMap[t.tier_id] = t
+
+  const metrics: { label: string; field: string; format: (v: number) => string }[] = [
+    { label: 'Total Exposure', field: 'total_eur', format: fmtEur },
+    { label: 'Operational Costs', field: 'opex_eur', format: fmtEur },
+    { label: 'Capital Requirements', field: 'capex_eur', format: fmtEur },
+    { label: 'Revenue at Risk', field: 'revenue_loss_eur', format: fmtEur },
+    { label: 'Downtime (days)', field: 'downtime_days', format: (v) => String(v) },
+  ]
+
+  const severeRange = fi.headline?.severe_exposure_range as Record<string, number> | undefined
+  const adverseRange = fi.headline?.adverse_exposure_range as Record<string, number> | undefined
+
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div id="financial-impact-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      <div className="h-1.5 bg-gradient-to-r from-blue-600 via-cyan-500 to-teal-400" />
+      <div
+        className="flex cursor-pointer select-none items-center justify-between px-6 py-4"
+        onClick={() => setOpen(o => !o)}
+      >
+        <h2 className="text-xl font-bold text-foreground">Financial Impact Analysis</h2>
+        {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
+      </div>
+      {open && (
+      <div className="px-6 pb-6">
+
+        {/* Headline */}
+        {headline && (
+          <p className="mb-5 rounded bg-slate-50 px-3 py-2 text-sm text-foreground">
+            <span className="font-semibold">Headline:&nbsp;</span>{headline}
+          </p>
+        )}
+
+        {/* Main metrics table */}
+        <div className="mb-6 overflow-hidden rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-700 text-white">
+                <th className="px-3 py-2.5 text-left font-semibold">Metric</th>
+                {tierOrder.map(tid => (
+                  <th key={tid} className={`px-3 py-2.5 text-right font-semibold ${tid === 'severe' ? 'bg-red-700' : ''}`}>
+                    {tierMap[tid]?.tier_label ?? tid}
+                  </th>
+                ))}
+              </tr>
+            </thead>
+            <tbody>
+              {metrics.map(({ label, field, format }, i) => (
+                <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                  <td className="px-3 py-2.5 font-medium text-foreground">{label}</td>
+                  {tierOrder.map(tid => {
+                    const val = tierMap[tid]?.totals_midpoint?.[field]
+                    const isSevereTotal = tid === 'severe' && field === 'total_eur'
+                    return (
+                      <td
+                        key={tid}
+                        className={`px-3 py-2.5 text-right tabular-nums ${isSevereTotal ? 'font-bold text-red-700' : 'text-foreground'
+                          } ${tid === 'severe' ? 'bg-red-50/40' : ''}`}
+                      >
+                        {val != null ? format(val) : '—'}
+                      </td>
+                    )
+                  })}
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Exposure Ranges */}
+        <h3 className="mb-3 text-base font-bold text-foreground">Exposure Ranges</h3>
+        <div className="mb-6 overflow-hidden rounded-lg border border-border">
+          <table className="w-full text-sm">
+            <thead>
+              <tr className="bg-slate-700 text-white">
+                <th className="px-3 py-2.5 text-left font-semibold">Scenario</th>
+                <th className="px-3 py-2.5 text-right font-semibold">Low</th>
+                <th className="px-3 py-2.5 text-right font-semibold">Mid</th>
+                <th className="px-3 py-2.5 text-right font-semibold">High</th>
+              </tr>
+            </thead>
+            <tbody>
+              {severeRange && (
+                <tr className="bg-white">
+                  <td className="px-3 py-2.5 font-medium text-foreground">Severe</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(severeRange.low)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">{fmtEur(severeRange.mid)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(severeRange.high)}</td>
+                </tr>
+              )}
+              {adverseRange && (
+                <tr className="bg-slate-50">
+                  <td className="px-3 py-2.5 font-medium text-foreground">Adverse</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(adverseRange.low)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">{fmtEur(adverseRange.mid)}</td>
+                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(adverseRange.high)}</td>
+                </tr>
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Top Risk Drivers */}
+        {topDrivers.length > 0 && (
+          <div>
+            <h3 className="mb-3 text-base font-bold text-foreground">Top Risk Drivers (Severe Scenario)</h3>
+            <div className="flex flex-col gap-1.5">
+              {topDrivers.map((d, i) => (
+                <p key={i} className="text-sm text-foreground">
+                  <span className="font-semibold">{d.ecosystem_service}</span>
+                  <span className="text-muted-foreground"> (Dependency: {d.dependency_strength})</span>
+                  <span className="font-medium"> → {fmtEur(d.severe_total_eur)}</span>
+                </p>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      )}
+    </div>
+  )
+}
+
+function StakeholderNarrativesCard({ data }: { data: AnalysisOutput }) {
+  const sn = data.stakeholder_narratives as Record<string, any> | null
+  if (!sn) return null
+
+  const oneLiner: string = sn.key_messages_summary?.one_liner ?? ''
+  const cfoNarrative: string = impersonal(sn.cfo_brief?.narrative ?? '')
+  const cfoBreakdown: Record<string, string> = sn.cfo_brief?.financial_exposure_summary?.breakdown ?? {}
+  const cfoHeadline: string = sn.cfo_brief?.financial_exposure_summary?.headline_figure ?? ''
+  const sustainNarrative: string = impersonal(sn.sustainability_report_section?.narrative ?? '')
+  const leap: Record<string, string> = sn.sustainability_report_section?.leap_process_summary ?? {}
+  const leapOrder: { key: string; label: string }[] = [
+    { key: 'locate', label: 'Locate' },
+    { key: 'evaluate', label: 'Evaluate' },
+    { key: 'assess', label: 'Assess' },
+    { key: 'prepare', label: 'Prepare' },
+  ]
+
+  const breakdownLabels: Record<string, string> = {
+    revenue_at_risk: 'Revenue at Risk',
+    operational_costs: 'Operational Costs',
+    capital_requirements: 'Capital Requirements',
+    potential_impairments: 'Potential Impairments',
+  }
+
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div id="stakeholder-narratives-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      <div className="h-1.5 bg-gradient-to-r from-violet-600 via-purple-500 to-fuchsia-400" />
+      <div
+        className="flex cursor-pointer select-none items-center justify-between px-6 py-4"
+        onClick={() => setOpen(o => !o)}
+      >
+        <h2 className="text-xl font-bold text-foreground">Stakeholder Narratives</h2>
+        {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
+      </div>
+      {open && (
+      <div className="px-6 pb-6">
+
+        {/* One-Liner */}
+        {oneLiner && (
+          <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+            <span className="font-semibold text-amber-800">One-Liner:&nbsp;</span>
+            <span className="text-amber-900">{impersonal(oneLiner)}</span>
+          </div>
+        )}
+
+        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+          {/* CFO Brief */}
+          {cfoNarrative && (
+            <div className="rounded-lg border border-border bg-slate-50 p-4">
+              <h3 className="mb-2 text-base font-bold text-foreground">CFO Brief</h3>
+              {cfoHeadline && (
+                <p className="mb-2 text-xs font-semibold text-blue-700">{cfoHeadline}</p>
+              )}
+              <p className="mb-3 text-sm leading-relaxed text-foreground">{cfoNarrative}</p>
+              {Object.keys(cfoBreakdown).length > 0 && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Breakdown</p>
+                  <div className="flex flex-wrap gap-2">
+                    {Object.entries(cfoBreakdown).map(([k, v]) => (
+                      <span key={k} className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs text-foreground">
+                        <span className="text-muted-foreground">{breakdownLabels[k] ?? k}:</span>
+                        <span className="font-semibold">{v}</span>
+                      </span>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+
+          {/* Sustainability Report Section */}
+          {sustainNarrative && (
+            <div className="rounded-lg border border-border bg-slate-50 p-4">
+              <h3 className="mb-2 text-base font-bold text-foreground">Sustainability Report Section</h3>
+              <p className="mb-3 text-sm leading-relaxed text-foreground">{sustainNarrative}</p>
+              {leapOrder.some(({ key }) => leap[key]) && (
+                <div>
+                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">LEAP Process Summary</p>
+                  <div className="overflow-hidden rounded-lg border border-border">
+                    <table className="w-full text-sm">
+                      <thead>
+                        <tr className="bg-slate-700 text-white">
+                          <th className="px-3 py-2 text-left font-semibold">Step</th>
+                          <th className="px-3 py-2 text-left font-semibold">Summary</th>
+                        </tr>
+                      </thead>
+                      <tbody>
+                        {leapOrder.filter(({ key }) => leap[key]).map(({ key, label }, i) => (
+                          <tr key={key} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                            <td className="px-3 py-2 font-semibold text-violet-700 whitespace-nowrap">{label}</td>
+                            <td className="px-3 py-2 text-foreground">{leap[key]}</td>
+                          </tr>
+                        ))}
+                      </tbody>
+                    </table>
+                  </div>
+                </div>
+              )}
+            </div>
+          )}
+        </div>
+      </div>
+      )}
+    </div>
+  )
+}
+
+function AdaptationStrategyCard({ data }: { data: AnalysisOutput }) {
+  const as_ = data.adaptation_strategy as Record<string, any> | null
+  if (!as_) return null
+
+  const overview = as_.strategic_overview as Record<string, any> | undefined
+  const pathways: any[] = as_.pathway_strategies ?? []
+  const roadmap = as_.implementation_roadmap as Record<string, any> | undefined
+
+  const totalInv = overview?.total_estimated_investment
+  const invText = totalInv
+    ? `${fmtEur(totalInv.low)} – ${fmtEur(totalInv.high)} (Confidence: ${totalInv.confidence ?? '—'})`
+    : null
+
+  const horizons: { key: string; label: string }[] = [
+    { key: 'short_term_actions', label: '0–12 months' },
+    { key: 'medium_term_investments', label: '1–3 years' },
+    { key: 'long_term_transformations', label: '3–10 years' },
+  ]
+
+  const feasibilityColor = (f: string) => {
+    switch (f?.toLowerCase()) {
+      case 'high':   return 'bg-green-100 text-green-800'
+      case 'medium': return 'bg-amber-100 text-amber-800'
+      case 'low':    return 'bg-red-100 text-red-800'
+      default:       return 'bg-slate-100 text-slate-700'
+    }
+  }
+
+  const roadmapPhases = roadmap
+    ? (['phase_1', 'phase_2', 'phase_3'] as const).map(pk => roadmap[pk]).filter(Boolean)
+    : []
+
+  const [open, setOpen] = useState(true)
+
+  return (
+    <div id="adaptation-strategy-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      <div className="h-1.5 bg-gradient-to-r from-orange-500 via-amber-400 to-yellow-300" />
+      <div
+        className="flex cursor-pointer select-none items-center justify-between px-6 py-4"
+        onClick={() => setOpen(o => !o)}
+      >
+        <h2 className="text-xl font-bold text-foreground">Adaptation Strategy</h2>
+        {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
+      </div>
+      {open && (
+      <div className="px-6 pb-6">
+
+        {/* Strategic Overview */}
+        {overview && (
+          <div className="mb-5 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm space-y-1">
+            {overview.risk_posture && (
+              <p><span className="font-semibold text-orange-900">Risk Posture:&nbsp;</span><span className="text-foreground">{overview.risk_posture}</span></p>
+            )}
+            {overview.strategic_intent && (
+              <p><span className="font-semibold text-orange-900">Strategic Intent:&nbsp;</span><span className="text-foreground">{impersonal(overview.strategic_intent)}</span></p>
+            )}
+            {invText && (
+              <p><span className="font-semibold text-orange-900">Total Estimated Investment:&nbsp;</span><span className="text-foreground">{invText}</span></p>
+            )}
+            {overview.potential_risk_reduction?.percentage != null && (
+              <p><span className="font-semibold text-orange-900">Potential Risk Reduction:&nbsp;</span><span className="text-foreground">{overview.potential_risk_reduction.percentage}%</span></p>
+            )}
+          </div>
+        )}
+
+        {/* Pathway Cards */}
+        {pathways.map((pathway, pi) => (
+          <div key={pi} className="mb-4 rounded-lg border border-border overflow-hidden">
+            <div className="flex items-center gap-3 bg-slate-700 px-4 py-2.5">
+              <span className="font-semibold text-white">Pathway: {pathway.pathway_name}</span>
+              {pathway.ecosystem_service && (
+                <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-medium text-amber-900">{pathway.ecosystem_service}</span>
+              )}
+            </div>
+            <div className="divide-y divide-border">
+              {horizons.map(({ key, label }) => {
+                const actions: any[] = pathway[key]?.actions ?? []
+                if (actions.length === 0) return null
+                return actions.map((action: any, ai: number) => (
+                  <div key={`${key}-${ai}`} className="p-4">
+                    <div className="mb-2 flex flex-wrap items-center gap-2">
+                      <span className="font-semibold text-foreground">{action.title}</span>
+                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">{label}</span>
+                    </div>
+                    {action.description && (
+                      <p className="mb-3 text-sm text-muted-foreground leading-relaxed">{action.description}</p>
+                    )}
+                    {/* Chips row */}
+                    <div className="mb-2 flex flex-wrap gap-2 text-xs">
+                      {action.estimated_cost && (
+                        <span className="rounded-full border border-border bg-white px-2.5 py-1 text-foreground">
+                          <span className="text-muted-foreground">Cost ({action.estimated_cost.type}):&nbsp;</span>
+                          <span className="font-semibold">{fmtEur(action.estimated_cost.amount_eur)}</span>
+                        </span>
+                      )}
+                      {action.risk_reduction?.estimate && (
+                        <span className="rounded-full border border-border bg-white px-2.5 py-1 text-foreground">
+                          <span className="text-muted-foreground">Risk Reduction:&nbsp;</span>
+                          <span className="font-semibold text-green-700">{action.risk_reduction.estimate}</span>
+                        </span>
+                      )}
+                      {action.feasibility && (
+                        <span className={`rounded-full px-2.5 py-1 font-semibold ${feasibilityColor(action.feasibility)}`}>
+                          Feasibility: {action.feasibility}
+                        </span>
+                      )}
+                    </div>
+                    {/* Case Study */}
+                    {action.grounding?.case_study_support && (
+                      <div className="mt-2 rounded bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                        <span className="font-semibold text-slate-700">Case Study: {action.grounding.case_study_support.entity}&nbsp;—&nbsp;</span>
+                        {action.grounding.case_study_support.action_taken}
+                        {action.grounding.case_study_support.outcome && (
+                          <span className="ml-1 text-green-700">Outcome: {action.grounding.case_study_support.outcome}</span>
+                        )}
+                      </div>
+                    )}
+                  </div>
+                ))
+              })}
+            </div>
+          </div>
+        ))}
+
+        {/* Implementation Roadmap */}
+        {roadmapPhases.length > 0 && (
+          <div>
+            <h3 className="mb-3 text-base font-bold text-foreground">Implementation Roadmap</h3>
+            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+              {roadmapPhases.map((phase: any, i: number) => (
+                <div key={i} className="rounded-lg border border-border bg-slate-50 p-3">
+                  <div className="mb-1 flex items-center gap-2">
+                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white">{i + 1}</span>
+                    <span className="font-semibold text-foreground">{phase.name}</span>
+                  </div>
+                  <p className="mb-2 text-xs text-muted-foreground">{phase.duration}</p>
+                  <ul className="space-y-1">
+                    {(phase.key_milestones ?? []).map((m: string, mi: number) => (
+                      <li key={mi} className="flex items-start gap-1.5 text-xs text-foreground">
+                        <span className="mt-0.5 text-orange-400">•</span>{m}
+                      </li>
+                    ))}
+                  </ul>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+      </div>
+      )}
+    </div>
+  )
 }
 
 // Initial form values — one entry per example asset, only the displayed fields
@@ -857,6 +1284,9 @@ export function App() {
                 <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
                   <ExecutiveSummaryCard data={analysisOutput} />
                   <NatureDependencyCard data={analysisOutput} />
+                  <FinancialImpactCard data={analysisOutput} />
+                  <StakeholderNarrativesCard data={analysisOutput} />
+                  <AdaptationStrategyCard data={analysisOutput} />
                   {ANALYSIS_SECTIONS.map(({ key, label }) => {
                     const isOpen = expandedSections.has(key)
                     return (
