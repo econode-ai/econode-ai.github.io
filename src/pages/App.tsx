@@ -15,7 +15,7 @@ const WORKFLOW_STAGES = [
   'Final Output',
 ]
 
-const DEFAULT_WEBHOOK_URL = 'https://nmudit.app.n8n.cloud/webhook/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07'
+const DEFAULT_WEBHOOK_URL = import.meta.env.VITE_WEBHOOK_URL || 'https://nmudit.app.n8n.cloud/webhook/d626ab46-dfae-4ae8-8dc1-6cac48ca9e07'
 
 // Full payload — always sent as-is; form is display only
 const EXAMPLE_JSON_DATA = [
@@ -228,70 +228,70 @@ function ExecutiveSummaryCard({ data }: { data: AnalysisOutput }) {
         {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
       </div>
       {open && (
-      <div className="px-6 pb-6">
+        <div className="px-6 pb-6">
 
-        {/* KPI row */}
-        <div className="mb-5 grid grid-cols-4 gap-3">
-          {/* Exposure — currency value, no score bar */}
-          <KpiCard value={exposureLabel} label="Severe Exposure (Mid)" />
+          {/* KPI row */}
+          <div className="mb-5 grid grid-cols-4 gap-3">
+            {/* Exposure — currency value, no score bar */}
+            <KpiCard value={exposureLabel} label="Severe Exposure (Mid)" />
 
-          {/* Physical Risk — higher score = more risk → red bar */}
-          <KpiCard
-            value={physicalScore != null ? physicalScore.toFixed(2) : '—'}
-            label="Physical Risk Score"
-            barPercent={physicalScore != null ? physicalScore * 100 : undefined}
-            barColorClass="bg-gradient-to-r from-orange-400 to-red-500"
-          />
+            {/* Physical Risk — higher score = more risk → red bar */}
+            <KpiCard
+              value={physicalScore != null ? physicalScore.toFixed(2) : '—'}
+              label="Physical Risk Score"
+              barPercent={physicalScore != null ? physicalScore * 100 : undefined}
+              barColorClass="bg-gradient-to-r from-orange-400 to-red-500"
+            />
 
-          {/* Transition Score — higher = more alignment (neutral/positive) → blue bar */}
-          <KpiCard
-            value={transitionScore != null ? transitionScore.toFixed(2) : '—'}
-            label="Transition Score"
-            barPercent={transitionScore != null ? transitionScore * 100 : undefined}
-            barColorClass="bg-gradient-to-r from-sky-400 to-blue-500"
-          />
+            {/* Transition Score — higher = more alignment (neutral/positive) → blue bar */}
+            <KpiCard
+              value={transitionScore != null ? transitionScore.toFixed(2) : '—'}
+              label="Transition Score"
+              barPercent={transitionScore != null ? transitionScore * 100 : undefined}
+              barColorClass="bg-gradient-to-r from-sky-400 to-blue-500"
+            />
 
-          {/* Quality Score — higher = better → green bar */}
-          <KpiCard
-            value={qualityScore != null ? `${qualityScore}/100` : '—'}
-            label="Quality Score"
-            barPercent={qualityScore}
-            barColorClass="bg-gradient-to-r from-emerald-400 to-green-500"
-          />
-        </div>
-
-        {/* Narrative */}
-        {narrative && (
-          <p className="mb-4 text-sm leading-relaxed text-foreground">{narrative}</p>
-        )}
-
-        {/* Risk rating box */}
-        <div className="mb-4 rounded border border-amber-400 bg-amber-50 px-4 py-2.5">
-          <span className="text-sm">
-            <span className="font-semibold text-foreground">Risk Rating:&nbsp;</span>
-            <span className="font-semibold text-amber-700">{riskLevel}</span>
-            <span className="mx-3 text-amber-300">|</span>
-            <span className="font-semibold text-foreground">Trend:&nbsp;</span>
-            <span className="font-semibold text-amber-700">{riskTrend}</span>
-            <span className="mx-3 text-amber-300">|</span>
-            <span className="font-semibold text-foreground">Confidence:&nbsp;</span>
-            <span className="font-semibold text-amber-700">{riskConfidence}</span>
-          </span>
-        </div>
-
-        {strategicImperative && (
-          <div className="mb-3 rounded border border-orange-400 bg-orange-50 px-4 py-2.5">
-            <span className="text-sm font-semibold text-foreground">Strategic Imperative:&nbsp;</span>
-            <span className="text-sm text-orange-800">{strategicImperative}</span>
+            {/* Quality Score — higher = better → green bar */}
+            <KpiCard
+              value={qualityScore != null ? `${qualityScore}/100` : '—'}
+              label="Quality Score"
+              barPercent={qualityScore}
+              barColorClass="bg-gradient-to-r from-emerald-400 to-green-500"
+            />
           </div>
-        )}
-        {recommendedAction && (
-          <div className="rounded border border-emerald-400 bg-emerald-50 px-4 py-2.5">
-            <span className="text-sm font-semibold text-foreground">Recommended Board Action:&nbsp;</span>
-            <span className="text-sm text-emerald-800">{recommendedAction}</span>
+
+          {/* Narrative */}
+          {narrative && (
+            <p className="mb-4 text-sm leading-relaxed text-foreground">{narrative}</p>
+          )}
+
+          {/* Risk rating box */}
+          <div className="mb-4 rounded border border-amber-400 bg-amber-50 px-4 py-2.5">
+            <span className="text-sm">
+              <span className="font-semibold text-foreground">Risk Rating:&nbsp;</span>
+              <span className="font-semibold text-amber-700">{riskLevel}</span>
+              <span className="mx-3 text-amber-300">|</span>
+              <span className="font-semibold text-foreground">Trend:&nbsp;</span>
+              <span className="font-semibold text-amber-700">{riskTrend}</span>
+              <span className="mx-3 text-amber-300">|</span>
+              <span className="font-semibold text-foreground">Confidence:&nbsp;</span>
+              <span className="font-semibold text-amber-700">{riskConfidence}</span>
+            </span>
           </div>
-        )}
-      </div>
+
+          {strategicImperative && (
+            <div className="mb-3 rounded border border-orange-400 bg-orange-50 px-4 py-2.5">
+              <span className="text-sm font-semibold text-foreground">Strategic Imperative:&nbsp;</span>
+              <span className="text-sm text-orange-800">{strategicImperative}</span>
+            </div>
+          )}
+          {recommendedAction && (
+            <div className="rounded border border-emerald-400 bg-emerald-50 px-4 py-2.5">
+              <span className="text-sm font-semibold text-foreground">Recommended Board Action:&nbsp;</span>
+              <span className="text-sm text-emerald-800">{recommendedAction}</span>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -332,64 +332,64 @@ function NatureDependencyCard({ data }: { data: AnalysisOutput }) {
         {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
       </div>
       {open && (
-      <div className="px-6 pb-6">
+        <div className="px-6 pb-6">
 
-        {/* Summary sentence */}
-        <p className="mb-5 text-sm leading-relaxed text-foreground">
-          This analysis identified{' '}
-          <span className="font-semibold">{dependencyCount} ecosystem service dependencies</span>{' '}
-          for the {sector.toLowerCase()} sector, derived using {derivationMethod}. Overall sensitivity flag:{' '}
-          <span className="font-semibold">{sensitivityFlag}</span>.
-          {envCtx?.biome && (
-            <span> Biome: <span className="font-medium">{envCtx.biome}</span>
-              {envCtx.water_stress_level && <span> · Water stress: <span className="font-medium">{envCtx.water_stress_level}</span></span>}
-            </span>
-          )}
-        </p>
+          {/* Summary sentence */}
+          <p className="mb-5 text-sm leading-relaxed text-foreground">
+            This analysis identified{' '}
+            <span className="font-semibold">{dependencyCount} ecosystem service dependencies</span>{' '}
+            for the {sector.toLowerCase()} sector, derived using {derivationMethod}. Overall sensitivity flag:{' '}
+            <span className="font-semibold">{sensitivityFlag}</span>.
+            {envCtx?.biome && (
+              <span> Biome: <span className="font-medium">{envCtx.biome}</span>
+                {envCtx.water_stress_level && <span> · Water stress: <span className="font-medium">{envCtx.water_stress_level}</span></span>}
+              </span>
+            )}
+          </p>
 
-        {/* Dependencies table */}
-        {dependencies.length > 0 && (
-          <div className="mb-6 overflow-hidden rounded-lg border border-border">
-            <table className="w-full text-sm">
-              <thead>
-                <tr className="bg-slate-700 text-white">
-                  <th className="px-3 py-2.5 text-left font-semibold">Ecosystem Service</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">Category</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">Strength</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">Type</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">Substitutability</th>
-                  <th className="px-3 py-2.5 text-left font-semibold">Time to Failure</th>
-                </tr>
-              </thead>
-              <tbody>
-                {dependencies.map((dep, i) => (
-                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                    <td className="px-3 py-2.5 font-medium text-foreground">{dep.ecosystem_service}</td>
-                    <td className="px-3 py-2.5 text-foreground">{dep.category}</td>
-                    <td className={`px-3 py-2.5 ${strengthColor(dep.dependency_strength)}`}>{dep.dependency_strength}</td>
-                    <td className="px-3 py-2.5 text-foreground">{dep.dependency_type}</td>
-                    <td className="px-3 py-2.5 text-foreground">{dep.substitutability}</td>
-                    <td className="px-3 py-2.5 text-foreground">{dep.time_to_failure}</td>
+          {/* Dependencies table */}
+          {dependencies.length > 0 && (
+            <div className="mb-6 overflow-hidden rounded-lg border border-border">
+              <table className="w-full text-sm">
+                <thead>
+                  <tr className="bg-slate-700 text-white">
+                    <th className="px-3 py-2.5 text-left font-semibold">Ecosystem Service</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Category</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Strength</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Type</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Substitutability</th>
+                    <th className="px-3 py-2.5 text-left font-semibold">Time to Failure</th>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
-        )}
+                </thead>
+                <tbody>
+                  {dependencies.map((dep, i) => (
+                    <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                      <td className="px-3 py-2.5 font-medium text-foreground">{dep.ecosystem_service}</td>
+                      <td className="px-3 py-2.5 text-foreground">{dep.category}</td>
+                      <td className={`px-3 py-2.5 ${strengthColor(dep.dependency_strength)}`}>{dep.dependency_strength}</td>
+                      <td className="px-3 py-2.5 text-foreground">{dep.dependency_type}</td>
+                      <td className="px-3 py-2.5 text-foreground">{dep.substitutability}</td>
+                      <td className="px-3 py-2.5 text-foreground">{dep.time_to_failure}</td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
-        {/* Dependency rationales */}
-        <div>
-          <h3 className="mb-3 text-base font-bold text-foreground">Dependency Rationales</h3>
-          <div className="flex flex-col gap-1.5">
-            {dependencies.map((dep, i) => (
-              <p key={i} className="text-sm text-foreground">
-                <span className="font-semibold">{dep.ecosystem_service}:&nbsp;</span>
-                {dep.rationale}
-              </p>
-            ))}
+          {/* Dependency rationales */}
+          <div>
+            <h3 className="mb-3 text-base font-bold text-foreground">Dependency Rationales</h3>
+            <div className="flex flex-col gap-1.5">
+              {dependencies.map((dep, i) => (
+                <p key={i} className="text-sm text-foreground">
+                  <span className="font-semibold">{dep.ecosystem_service}:&nbsp;</span>
+                  {dep.rationale}
+                </p>
+              ))}
+            </div>
           </div>
         </div>
-      </div>
       )}
     </div>
   )
@@ -446,100 +446,100 @@ function FinancialImpactCard({ data }: { data: AnalysisOutput }) {
         {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
       </div>
       {open && (
-      <div className="px-6 pb-6">
+        <div className="px-6 pb-6">
 
-        {/* Headline */}
-        {headline && (
-          <p className="mb-5 rounded bg-slate-50 px-3 py-2 text-sm text-foreground">
-            <span className="font-semibold">Headline:&nbsp;</span>{headline}
-          </p>
-        )}
+          {/* Headline */}
+          {headline && (
+            <p className="mb-5 rounded bg-slate-50 px-3 py-2 text-sm text-foreground">
+              <span className="font-semibold">Headline:&nbsp;</span>{headline}
+            </p>
+          )}
 
-        {/* Main metrics table */}
-        <div className="mb-6 overflow-hidden rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-700 text-white">
-                <th className="px-3 py-2.5 text-left font-semibold">Metric</th>
-                {tierOrder.map(tid => (
-                  <th key={tid} className={`px-3 py-2.5 text-right font-semibold ${tid === 'severe' ? 'bg-red-700' : ''}`}>
-                    {tierMap[tid]?.tier_label ?? tid}
-                  </th>
+          {/* Main metrics table */}
+          <div className="mb-6 overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-700 text-white">
+                  <th className="px-3 py-2.5 text-left font-semibold">Metric</th>
+                  {tierOrder.map(tid => (
+                    <th key={tid} className={`px-3 py-2.5 text-right font-semibold ${tid === 'severe' ? 'bg-red-700' : ''}`}>
+                      {tierMap[tid]?.tier_label ?? tid}
+                    </th>
+                  ))}
+                </tr>
+              </thead>
+              <tbody>
+                {metrics.map(({ label, field, format }, i) => (
+                  <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <td className="px-3 py-2.5 font-medium text-foreground">{label}</td>
+                    {tierOrder.map(tid => {
+                      const val = tierMap[tid]?.totals_midpoint?.[field]
+                      const isSevereTotal = tid === 'severe' && field === 'total_eur'
+                      return (
+                        <td
+                          key={tid}
+                          className={`px-3 py-2.5 text-right tabular-nums ${isSevereTotal ? 'font-bold text-red-700' : 'text-foreground'
+                            } ${tid === 'severe' ? 'bg-red-50/40' : ''}`}
+                        >
+                          {val != null ? format(val) : '—'}
+                        </td>
+                      )
+                    })}
+                  </tr>
                 ))}
-              </tr>
-            </thead>
-            <tbody>
-              {metrics.map(({ label, field, format }, i) => (
-                <tr key={label} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                  <td className="px-3 py-2.5 font-medium text-foreground">{label}</td>
-                  {tierOrder.map(tid => {
-                    const val = tierMap[tid]?.totals_midpoint?.[field]
-                    const isSevereTotal = tid === 'severe' && field === 'total_eur'
-                    return (
-                      <td
-                        key={tid}
-                        className={`px-3 py-2.5 text-right tabular-nums ${isSevereTotal ? 'font-bold text-red-700' : 'text-foreground'
-                          } ${tid === 'severe' ? 'bg-red-50/40' : ''}`}
-                      >
-                        {val != null ? format(val) : '—'}
-                      </td>
-                    )
-                  })}
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Exposure Ranges */}
-        <h3 className="mb-3 text-base font-bold text-foreground">Exposure Ranges</h3>
-        <div className="mb-6 overflow-hidden rounded-lg border border-border">
-          <table className="w-full text-sm">
-            <thead>
-              <tr className="bg-slate-700 text-white">
-                <th className="px-3 py-2.5 text-left font-semibold">Scenario</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Low</th>
-                <th className="px-3 py-2.5 text-right font-semibold">Mid</th>
-                <th className="px-3 py-2.5 text-right font-semibold">High</th>
-              </tr>
-            </thead>
-            <tbody>
-              {severeRange && (
-                <tr className="bg-white">
-                  <td className="px-3 py-2.5 font-medium text-foreground">Severe</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(severeRange.low)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">{fmtEur(severeRange.mid)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(severeRange.high)}</td>
-                </tr>
-              )}
-              {adverseRange && (
-                <tr className="bg-slate-50">
-                  <td className="px-3 py-2.5 font-medium text-foreground">Adverse</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(adverseRange.low)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">{fmtEur(adverseRange.mid)}</td>
-                  <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(adverseRange.high)}</td>
-                </tr>
-              )}
-            </tbody>
-          </table>
-        </div>
-
-        {/* Top Risk Drivers */}
-        {topDrivers.length > 0 && (
-          <div>
-            <h3 className="mb-3 text-base font-bold text-foreground">Top Risk Drivers (Severe Scenario)</h3>
-            <div className="flex flex-col gap-1.5">
-              {topDrivers.map((d, i) => (
-                <p key={i} className="text-sm text-foreground">
-                  <span className="font-semibold">{d.ecosystem_service}</span>
-                  <span className="text-muted-foreground"> (Dependency: {d.dependency_strength})</span>
-                  <span className="font-medium"> → {fmtEur(d.severe_total_eur)}</span>
-                </p>
-              ))}
-            </div>
+              </tbody>
+            </table>
           </div>
-        )}
-      </div>
+
+          {/* Exposure Ranges */}
+          <h3 className="mb-3 text-base font-bold text-foreground">Exposure Ranges</h3>
+          <div className="mb-6 overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-700 text-white">
+                  <th className="px-3 py-2.5 text-left font-semibold">Scenario</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Low</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">Mid</th>
+                  <th className="px-3 py-2.5 text-right font-semibold">High</th>
+                </tr>
+              </thead>
+              <tbody>
+                {severeRange && (
+                  <tr className="bg-white">
+                    <td className="px-3 py-2.5 font-medium text-foreground">Severe</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(severeRange.low)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">{fmtEur(severeRange.mid)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(severeRange.high)}</td>
+                  </tr>
+                )}
+                {adverseRange && (
+                  <tr className="bg-slate-50">
+                    <td className="px-3 py-2.5 font-medium text-foreground">Adverse</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(adverseRange.low)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums font-bold text-foreground">{fmtEur(adverseRange.mid)}</td>
+                    <td className="px-3 py-2.5 text-right tabular-nums text-foreground">{fmtEur(adverseRange.high)}</td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+
+          {/* Top Risk Drivers */}
+          {topDrivers.length > 0 && (
+            <div>
+              <h3 className="mb-3 text-base font-bold text-foreground">Top Risk Drivers (Severe Scenario)</h3>
+              <div className="flex flex-col gap-1.5">
+                {topDrivers.map((d, i) => (
+                  <p key={i} className="text-sm text-foreground">
+                    <span className="font-semibold">{d.ecosystem_service}</span>
+                    <span className="text-muted-foreground"> (Dependency: {d.dependency_strength})</span>
+                    <span className="font-medium"> → {fmtEur(d.severe_total_eur)}</span>
+                  </p>
+                ))}
+              </div>
+            </div>
+          )}
+        </div>
       )}
     </div>
   )
@@ -582,73 +582,73 @@ function StakeholderNarrativesCard({ data }: { data: AnalysisOutput }) {
         {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
       </div>
       {open && (
-      <div className="px-6 pb-6">
+        <div className="px-6 pb-6">
 
-        {/* One-Liner */}
-        {oneLiner && (
-          <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
-            <span className="font-semibold text-amber-800">One-Liner:&nbsp;</span>
-            <span className="text-amber-900">{impersonal(oneLiner)}</span>
-          </div>
-        )}
-
-        <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
-          {/* CFO Brief */}
-          {cfoNarrative && (
-            <div className="rounded-lg border border-border bg-slate-50 p-4">
-              <h3 className="mb-2 text-base font-bold text-foreground">CFO Brief</h3>
-              {cfoHeadline && (
-                <p className="mb-2 text-xs font-semibold text-blue-700">{cfoHeadline}</p>
-              )}
-              <p className="mb-3 text-sm leading-relaxed text-foreground">{cfoNarrative}</p>
-              {Object.keys(cfoBreakdown).length > 0 && (
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Breakdown</p>
-                  <div className="flex flex-wrap gap-2">
-                    {Object.entries(cfoBreakdown).map(([k, v]) => (
-                      <span key={k} className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs text-foreground">
-                        <span className="text-muted-foreground">{breakdownLabels[k] ?? k}:</span>
-                        <span className="font-semibold">{v}</span>
-                      </span>
-                    ))}
-                  </div>
-                </div>
-              )}
+          {/* One-Liner */}
+          {oneLiner && (
+            <div className="mb-5 rounded-lg border border-amber-300 bg-amber-50 px-4 py-3">
+              <span className="font-semibold text-amber-800">One-Liner:&nbsp;</span>
+              <span className="text-amber-900">{impersonal(oneLiner)}</span>
             </div>
           )}
 
-          {/* Sustainability Report Section */}
-          {sustainNarrative && (
-            <div className="rounded-lg border border-border bg-slate-50 p-4">
-              <h3 className="mb-2 text-base font-bold text-foreground">Sustainability Report Section</h3>
-              <p className="mb-3 text-sm leading-relaxed text-foreground">{sustainNarrative}</p>
-              {leapOrder.some(({ key }) => leap[key]) && (
-                <div>
-                  <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">LEAP Process Summary</p>
-                  <div className="overflow-hidden rounded-lg border border-border">
-                    <table className="w-full text-sm">
-                      <thead>
-                        <tr className="bg-slate-700 text-white">
-                          <th className="px-3 py-2 text-left font-semibold">Step</th>
-                          <th className="px-3 py-2 text-left font-semibold">Summary</th>
-                        </tr>
-                      </thead>
-                      <tbody>
-                        {leapOrder.filter(({ key }) => leap[key]).map(({ key, label }, i) => (
-                          <tr key={key} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
-                            <td className="px-3 py-2 font-semibold text-violet-700 whitespace-nowrap">{label}</td>
-                            <td className="px-3 py-2 text-foreground">{leap[key]}</td>
+          <div className="grid grid-cols-1 gap-5 md:grid-cols-2">
+            {/* CFO Brief */}
+            {cfoNarrative && (
+              <div className="rounded-lg border border-border bg-slate-50 p-4">
+                <h3 className="mb-2 text-base font-bold text-foreground">CFO Brief</h3>
+                {cfoHeadline && (
+                  <p className="mb-2 text-xs font-semibold text-blue-700">{cfoHeadline}</p>
+                )}
+                <p className="mb-3 text-sm leading-relaxed text-foreground">{cfoNarrative}</p>
+                {Object.keys(cfoBreakdown).length > 0 && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">Breakdown</p>
+                    <div className="flex flex-wrap gap-2">
+                      {Object.entries(cfoBreakdown).map(([k, v]) => (
+                        <span key={k} className="inline-flex items-center gap-1 rounded-full border border-border bg-white px-2.5 py-1 text-xs text-foreground">
+                          <span className="text-muted-foreground">{breakdownLabels[k] ?? k}:</span>
+                          <span className="font-semibold">{v}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
+            {/* Sustainability Report Section */}
+            {sustainNarrative && (
+              <div className="rounded-lg border border-border bg-slate-50 p-4">
+                <h3 className="mb-2 text-base font-bold text-foreground">Sustainability Report Section</h3>
+                <p className="mb-3 text-sm leading-relaxed text-foreground">{sustainNarrative}</p>
+                {leapOrder.some(({ key }) => leap[key]) && (
+                  <div>
+                    <p className="mb-1.5 text-xs font-semibold uppercase tracking-wide text-muted-foreground">LEAP Process Summary</p>
+                    <div className="overflow-hidden rounded-lg border border-border">
+                      <table className="w-full text-sm">
+                        <thead>
+                          <tr className="bg-slate-700 text-white">
+                            <th className="px-3 py-2 text-left font-semibold">Step</th>
+                            <th className="px-3 py-2 text-left font-semibold">Summary</th>
                           </tr>
-                        ))}
-                      </tbody>
-                    </table>
+                        </thead>
+                        <tbody>
+                          {leapOrder.filter(({ key }) => leap[key]).map(({ key, label }, i) => (
+                            <tr key={key} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                              <td className="px-3 py-2 font-semibold text-violet-700 whitespace-nowrap">{label}</td>
+                              <td className="px-3 py-2 text-foreground">{leap[key]}</td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+                    </div>
                   </div>
-                </div>
-              )}
-            </div>
-          )}
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
       )}
     </div>
   )
@@ -675,10 +675,10 @@ function AdaptationStrategyCard({ data }: { data: AnalysisOutput }) {
 
   const feasibilityColor = (f: string) => {
     switch (f?.toLowerCase()) {
-      case 'high':   return 'bg-green-100 text-green-800'
+      case 'high': return 'bg-green-100 text-green-800'
       case 'medium': return 'bg-amber-100 text-amber-800'
-      case 'low':    return 'bg-red-100 text-red-800'
-      default:       return 'bg-slate-100 text-slate-700'
+      case 'low': return 'bg-red-100 text-red-800'
+      default: return 'bg-slate-100 text-slate-700'
     }
   }
 
@@ -699,110 +699,110 @@ function AdaptationStrategyCard({ data }: { data: AnalysisOutput }) {
         {open ? <ChevronDown className="h-5 w-5 shrink-0 text-muted-foreground" /> : <ChevronRight className="h-5 w-5 shrink-0 text-muted-foreground" />}
       </div>
       {open && (
-      <div className="px-6 pb-6">
+        <div className="px-6 pb-6">
 
-        {/* Strategic Overview */}
-        {overview && (
-          <div className="mb-5 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm space-y-1">
-            {overview.risk_posture && (
-              <p><span className="font-semibold text-orange-900">Risk Posture:&nbsp;</span><span className="text-foreground">{overview.risk_posture}</span></p>
-            )}
-            {overview.strategic_intent && (
-              <p><span className="font-semibold text-orange-900">Strategic Intent:&nbsp;</span><span className="text-foreground">{impersonal(overview.strategic_intent)}</span></p>
-            )}
-            {invText && (
-              <p><span className="font-semibold text-orange-900">Total Estimated Investment:&nbsp;</span><span className="text-foreground">{invText}</span></p>
-            )}
-            {overview.potential_risk_reduction?.percentage != null && (
-              <p><span className="font-semibold text-orange-900">Potential Risk Reduction:&nbsp;</span><span className="text-foreground">{overview.potential_risk_reduction.percentage}%</span></p>
-            )}
-          </div>
-        )}
-
-        {/* Pathway Cards */}
-        {pathways.map((pathway, pi) => (
-          <div key={pi} className="mb-4 rounded-lg border border-border overflow-hidden">
-            <div className="flex items-center gap-3 bg-slate-700 px-4 py-2.5">
-              <span className="font-semibold text-white">Pathway: {pathway.pathway_name}</span>
-              {pathway.ecosystem_service && (
-                <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-medium text-amber-900">{pathway.ecosystem_service}</span>
+          {/* Strategic Overview */}
+          {overview && (
+            <div className="mb-5 rounded-lg border border-orange-200 bg-orange-50 px-4 py-3 text-sm space-y-1">
+              {overview.risk_posture && (
+                <p><span className="font-semibold text-orange-900">Risk Posture:&nbsp;</span><span className="text-foreground">{overview.risk_posture}</span></p>
+              )}
+              {overview.strategic_intent && (
+                <p><span className="font-semibold text-orange-900">Strategic Intent:&nbsp;</span><span className="text-foreground">{impersonal(overview.strategic_intent)}</span></p>
+              )}
+              {invText && (
+                <p><span className="font-semibold text-orange-900">Total Estimated Investment:&nbsp;</span><span className="text-foreground">{invText}</span></p>
+              )}
+              {overview.potential_risk_reduction?.percentage != null && (
+                <p><span className="font-semibold text-orange-900">Potential Risk Reduction:&nbsp;</span><span className="text-foreground">{overview.potential_risk_reduction.percentage}%</span></p>
               )}
             </div>
-            <div className="divide-y divide-border">
-              {horizons.map(({ key, label }) => {
-                const actions: any[] = pathway[key]?.actions ?? []
-                if (actions.length === 0) return null
-                return actions.map((action: any, ai: number) => (
-                  <div key={`${key}-${ai}`} className="p-4">
-                    <div className="mb-2 flex flex-wrap items-center gap-2">
-                      <span className="font-semibold text-foreground">{action.title}</span>
-                      <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">{label}</span>
-                    </div>
-                    {action.description && (
-                      <p className="mb-3 text-sm text-muted-foreground leading-relaxed">{action.description}</p>
-                    )}
-                    {/* Chips row */}
-                    <div className="mb-2 flex flex-wrap gap-2 text-xs">
-                      {action.estimated_cost && (
-                        <span className="rounded-full border border-border bg-white px-2.5 py-1 text-foreground">
-                          <span className="text-muted-foreground">Cost ({action.estimated_cost.type}):&nbsp;</span>
-                          <span className="font-semibold">{fmtEur(action.estimated_cost.amount_eur)}</span>
-                        </span>
+          )}
+
+          {/* Pathway Cards */}
+          {pathways.map((pathway, pi) => (
+            <div key={pi} className="mb-4 rounded-lg border border-border overflow-hidden">
+              <div className="flex items-center gap-3 bg-slate-700 px-4 py-2.5">
+                <span className="font-semibold text-white">Pathway: {pathway.pathway_name}</span>
+                {pathway.ecosystem_service && (
+                  <span className="rounded-full bg-amber-400 px-2.5 py-0.5 text-xs font-medium text-amber-900">{pathway.ecosystem_service}</span>
+                )}
+              </div>
+              <div className="divide-y divide-border">
+                {horizons.map(({ key, label }) => {
+                  const actions: any[] = pathway[key]?.actions ?? []
+                  if (actions.length === 0) return null
+                  return actions.map((action: any, ai: number) => (
+                    <div key={`${key}-${ai}`} className="p-4">
+                      <div className="mb-2 flex flex-wrap items-center gap-2">
+                        <span className="font-semibold text-foreground">{action.title}</span>
+                        <span className="rounded-full bg-slate-100 px-2.5 py-0.5 text-xs text-slate-600">{label}</span>
+                      </div>
+                      {action.description && (
+                        <p className="mb-3 text-sm text-muted-foreground leading-relaxed">{action.description}</p>
                       )}
-                      {action.risk_reduction?.estimate && (
-                        <span className="rounded-full border border-border bg-white px-2.5 py-1 text-foreground">
-                          <span className="text-muted-foreground">Risk Reduction:&nbsp;</span>
-                          <span className="font-semibold text-green-700">{action.risk_reduction.estimate}</span>
-                        </span>
-                      )}
-                      {action.feasibility && (
-                        <span className={`rounded-full px-2.5 py-1 font-semibold ${feasibilityColor(action.feasibility)}`}>
-                          Feasibility: {action.feasibility}
-                        </span>
-                      )}
-                    </div>
-                    {/* Case Study */}
-                    {action.grounding?.case_study_support && (
-                      <div className="mt-2 rounded bg-slate-50 px-3 py-2 text-xs text-slate-600">
-                        <span className="font-semibold text-slate-700">Case Study: {action.grounding.case_study_support.entity}&nbsp;—&nbsp;</span>
-                        {action.grounding.case_study_support.action_taken}
-                        {action.grounding.case_study_support.outcome && (
-                          <span className="ml-1 text-green-700">Outcome: {action.grounding.case_study_support.outcome}</span>
+                      {/* Chips row */}
+                      <div className="mb-2 flex flex-wrap gap-2 text-xs">
+                        {action.estimated_cost && (
+                          <span className="rounded-full border border-border bg-white px-2.5 py-1 text-foreground">
+                            <span className="text-muted-foreground">Cost ({action.estimated_cost.type}):&nbsp;</span>
+                            <span className="font-semibold">{fmtEur(action.estimated_cost.amount_eur)}</span>
+                          </span>
+                        )}
+                        {action.risk_reduction?.estimate && (
+                          <span className="rounded-full border border-border bg-white px-2.5 py-1 text-foreground">
+                            <span className="text-muted-foreground">Risk Reduction:&nbsp;</span>
+                            <span className="font-semibold text-green-700">{action.risk_reduction.estimate}</span>
+                          </span>
+                        )}
+                        {action.feasibility && (
+                          <span className={`rounded-full px-2.5 py-1 font-semibold ${feasibilityColor(action.feasibility)}`}>
+                            Feasibility: {action.feasibility}
+                          </span>
                         )}
                       </div>
-                    )}
-                  </div>
-                ))
-              })}
+                      {/* Case Study */}
+                      {action.grounding?.case_study_support && (
+                        <div className="mt-2 rounded bg-slate-50 px-3 py-2 text-xs text-slate-600">
+                          <span className="font-semibold text-slate-700">Case Study: {action.grounding.case_study_support.entity}&nbsp;—&nbsp;</span>
+                          {action.grounding.case_study_support.action_taken}
+                          {action.grounding.case_study_support.outcome && (
+                            <span className="ml-1 text-green-700">Outcome: {action.grounding.case_study_support.outcome}</span>
+                          )}
+                        </div>
+                      )}
+                    </div>
+                  ))
+                })}
+              </div>
             </div>
-          </div>
-        ))}
+          ))}
 
-        {/* Implementation Roadmap */}
-        {roadmapPhases.length > 0 && (
-          <div>
-            <h3 className="mb-3 text-base font-bold text-foreground">Implementation Roadmap</h3>
-            <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
-              {roadmapPhases.map((phase: any, i: number) => (
-                <div key={i} className="rounded-lg border border-border bg-slate-50 p-3">
-                  <div className="mb-1 flex items-center gap-2">
-                    <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white">{i + 1}</span>
-                    <span className="font-semibold text-foreground">{phase.name}</span>
+          {/* Implementation Roadmap */}
+          {roadmapPhases.length > 0 && (
+            <div>
+              <h3 className="mb-3 text-base font-bold text-foreground">Implementation Roadmap</h3>
+              <div className="grid grid-cols-1 gap-3 sm:grid-cols-3">
+                {roadmapPhases.map((phase: any, i: number) => (
+                  <div key={i} className="rounded-lg border border-border bg-slate-50 p-3">
+                    <div className="mb-1 flex items-center gap-2">
+                      <span className="flex h-6 w-6 items-center justify-center rounded-full bg-orange-500 text-xs font-bold text-white">{i + 1}</span>
+                      <span className="font-semibold text-foreground">{phase.name}</span>
+                    </div>
+                    <p className="mb-2 text-xs text-muted-foreground">{phase.duration}</p>
+                    <ul className="space-y-1">
+                      {(phase.key_milestones ?? []).map((m: string, mi: number) => (
+                        <li key={mi} className="flex items-start gap-1.5 text-xs text-foreground">
+                          <span className="mt-0.5 text-orange-400">•</span>{m}
+                        </li>
+                      ))}
+                    </ul>
                   </div>
-                  <p className="mb-2 text-xs text-muted-foreground">{phase.duration}</p>
-                  <ul className="space-y-1">
-                    {(phase.key_milestones ?? []).map((m: string, mi: number) => (
-                      <li key={mi} className="flex items-start gap-1.5 text-xs text-foreground">
-                        <span className="mt-0.5 text-orange-400">•</span>{m}
-                      </li>
-                    ))}
-                  </ul>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
-          </div>
-        )}
-      </div>
+          )}
+        </div>
       )}
     </div>
   )
