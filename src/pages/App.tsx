@@ -1,8 +1,9 @@
 import { useEffect, useRef, useState } from 'react'
 import { Check, ChevronDown, ChevronRight } from 'lucide-react'
 import { supabase } from '@/lib/supabase'
-import { Button, ConfigProvider, Form, InputNumber, Select, Segmented } from 'antd'
-import { DeleteOutlined, PlusOutlined } from '@ant-design/icons'
+import { Button, ConfigProvider, Form, InputNumber, Modal, Select, Segmented } from 'antd'
+import { DeleteOutlined, DownloadOutlined, PlusOutlined } from '@ant-design/icons'
+import { generatePdf } from '@/lib/generatePdf'
 
 const WORKFLOW_STAGES = [
   'User Input Validation',
@@ -860,6 +861,8 @@ export function App() {
 
   function applyStage(stage: number) {
     setStageStatuses(prev => {
+      // If all stages are pending, workflow was cancelled — ignore stale updates
+      if (prev.every(s => s === 'pending')) return prev
       if (prev[stage] === 'completed') return prev
       const next = [...prev]
       next[stage] = 'completed'
@@ -873,6 +876,8 @@ export function App() {
   function applyStages(completedNs: number[]) {
     if (completedNs.length === 0) return
     setStageStatuses(prev => {
+      // If all stages are pending, workflow was cancelled — ignore stale updates
+      if (prev.every(s => s === 'pending')) return prev
       const next = [...prev]
       let changed = false
       let maxCompleted = -1
@@ -976,12 +981,14 @@ export function App() {
   }, [workflowActive])
 
   async function handleSend() {
+    // Reset stage statuses immediately so Panel 2 never shows stale checkmarks
+    setStageStatuses(PENDING_STAGES)
+
     // Validate form first
     await form.validateFields()
 
     setStatus({ type: 'loading' })
     setWorkflowActive(false)
-    setStageStatuses(PENDING_STAGES)
     setAnalysisOutput(null)
     sentAtRef.current = null
     lsSet('econode_sent_at', null)
@@ -1010,6 +1017,26 @@ export function App() {
       if (err && typeof err === 'object' && 'errorFields' in err) return // validation error, stay on form
       setStatus({ type: 'error', message: err instanceof SyntaxError ? 'Invalid JSON' : String(err) })
     }
+  }
+
+  function handleCancel() {
+    Modal.confirm({
+      title: 'Cancel workflow?',
+      content: 'This will abandon the current request and reset all data. You will return to the input screen.',
+      okText: 'Yes, cancel',
+      okButtonProps: { danger: true },
+      cancelText: 'Keep running',
+      onOk() {
+        setWorkflowActive(false)
+        setStageStatuses(PENDING_STAGES)
+        lsSet('econode_stage_statuses', PENDING_STAGES)
+        setAnalysisOutput(null)
+        setStatus({ type: 'idle' })
+        sentAtRef.current = null
+        lsSet('econode_sent_at', null)
+        setActivePanel(1)
+      },
+    })
   }
 
   const panel1Disabled = workflowActive && !analysisOutput
@@ -1217,6 +1244,11 @@ export function App() {
               <div className="mb-4 flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">2</span>
                 <h2 className="text-lg font-semibold text-foreground flex-1">Workflow</h2>
+                {workflowActive && (
+                  <Button danger size="small" onClick={handleCancel}>
+                    Cancel
+                  </Button>
+                )}
                 <button
                   onClick={() => setActivePanel(1)}
                   className="rounded p-1 text-muted-foreground hover:bg-muted transition-colors"
@@ -1263,6 +1295,16 @@ export function App() {
               <div className="mb-4 flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">3</span>
                 <h2 className="text-lg font-semibold text-foreground flex-1">Analysis Output</h2>
+                {analysisOutput && (
+                  <Button
+                    type="primary"
+                    size="small"
+                    icon={<DownloadOutlined />}
+                    onClick={() => generatePdf(analysisOutput)}
+                  >
+                    Download PDF
+                  </Button>
+                )}
                 <button
                   onClick={() => setActivePanel(2)}
                   className="rounded p-1 text-muted-foreground hover:bg-muted transition-colors"
