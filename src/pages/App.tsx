@@ -133,6 +133,17 @@ const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
 const POLL_INTERVAL_MS = 3000
 const PENDING_STAGES: StageStatus[] = WORKFLOW_STAGES.map(() => 'pending')
 
+function lsGet<T>(key: string, fallback: T): T {
+  try {
+    const raw = localStorage.getItem(key)
+    return raw ? (JSON.parse(raw) as T) : fallback
+  } catch { return fallback }
+}
+
+function lsSet(key: string, value: unknown) {
+  try { localStorage.setItem(key, JSON.stringify(value)) } catch { /* quota full */ }
+}
+
 type PanelId = 1 | 2 | 3
 
 const PANEL_LABELS: Record<PanelId, string> = {
@@ -156,12 +167,31 @@ export function App() {
 
   const [webhookUrl] = useState(DEFAULT_WEBHOOK_URL)
   const [status, setStatus] = useState<{ type: 'idle' | 'loading' | 'success' | 'error'; message?: string }>({ type: 'idle' })
-  const [workflowActive, setWorkflowActive] = useState(false)
-  const [stageStatuses, setStageStatuses] = useState<StageStatus[]>(PENDING_STAGES)
-  const [analysisOutput, setAnalysisOutput] = useState<AnalysisOutput | null>(null)
-  const [waitingForOutput, setWaitingForOutput] = useState(false)
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set())
-  const [activePanel, setActivePanel] = useState<PanelId>(1)
+  const [workflowActive, setWorkflowActive] = useState(
+    () => lsGet<boolean>('econode_workflow_active', false)
+  )
+  const [stageStatuses, setStageStatuses] = useState<StageStatus[]>(
+    () => lsGet<StageStatus[]>('econode_stage_statuses', PENDING_STAGES)
+  )
+  const [analysisOutput, setAnalysisOutput] = useState<AnalysisOutput | null>(
+    () => lsGet<AnalysisOutput | null>('econode_analysis_output', null)
+  )
+  const [waitingForOutput, setWaitingForOutput] = useState(
+    () => lsGet<boolean>('econode_workflow_active', false) && !lsGet<AnalysisOutput | null>('econode_analysis_output', null)
+  )
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(
+    () => new Set(lsGet<string[]>('econode_expanded_sections', []))
+  )
+  const [activePanel, setActivePanel] = useState<PanelId>(
+    () => lsGet<PanelId>('econode_active_panel', 1)
+  )
+
+  // Persist to localStorage whenever these values change
+  useEffect(() => { lsSet('econode_analysis_output', analysisOutput) }, [analysisOutput])
+  useEffect(() => { lsSet('econode_stage_statuses', stageStatuses) }, [stageStatuses])
+  useEffect(() => { lsSet('econode_expanded_sections', Array.from(expandedSections)) }, [expandedSections])
+  useEffect(() => { lsSet('econode_active_panel', activePanel) }, [activePanel])
+  useEffect(() => { lsSet('econode_workflow_active', workflowActive) }, [workflowActive])
 
   function toggleSection(key: string) {
     setExpandedSections(prev => {
@@ -171,7 +201,7 @@ export function App() {
     })
   }
 
-  const sentAtRef = useRef<string | null>(null)
+  const sentAtRef = useRef<string | null>(lsGet<string | null>('econode_sent_at', null))
 
   function applyStage(stage: number) {
     setStageStatuses(prev => {
@@ -237,6 +267,7 @@ export function App() {
       })
       setWaitingForOutput(false)
       setStageStatuses(WORKFLOW_STAGES.map(() => 'completed'))
+      setWorkflowActive(false)  // stops re-polling on next refresh
       setActivePanel(3)
     }
 
@@ -297,6 +328,8 @@ export function App() {
     setWorkflowActive(false)
     setStageStatuses(PENDING_STAGES)
     setAnalysisOutput(null)
+    sentAtRef.current = null
+    lsSet('econode_sent_at', null)
 
     try {
       const requestId = crypto.randomUUID()
@@ -311,6 +344,7 @@ export function App() {
       const data = await res.json()
       if (res.ok && data.message === 'Workflow was started') {
         sentAtRef.current = new Date().toISOString()
+        lsSet('econode_sent_at', sentAtRef.current)
         setStatus({ type: 'success', message: 'Workflow started successfully' })
         setWorkflowActive(true)
         setActivePanel(2)
