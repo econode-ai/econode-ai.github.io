@@ -119,15 +119,15 @@ type AnalysisOutput = {
 }
 
 const ANALYSIS_SECTIONS: { key: keyof AnalysisOutput; label: string }[] = [
-  { key: 'asset', label: 'Asset' },
   { key: 'nature_dependency', label: 'Nature Dependency' },
-  { key: 'tnfd_scenario_frame', label: 'TNFD Scenario Frame' },
   { key: 'financial_impact', label: 'Financial Impact' },
-  { key: 'evidence_synthesis', label: 'Evidence Synthesis' },
-  { key: 'adaptation_strategy', label: 'Adaptation Strategy' },
   { key: 'stakeholder_narratives', label: 'Stakeholder Narratives' },
+  { key: 'adaptation_strategy', label: 'Adaptation Strategy' },
+  { key: 'tnfd_scenario_frame', label: 'TNFD Scenario Frame' },
+  { key: 'evidence_synthesis', label: 'Evidence Synthesis' },
   { key: 'evaluation_result', label: 'Evaluation Result' },
   { key: 'explainability_pack', label: 'Explainability Pack' },
+  { key: 'asset', label: 'Asset' },
 ]
 
 const POLL_INTERVAL_MS = 3000
@@ -145,6 +145,234 @@ function lsSet(key: string, value: unknown) {
 }
 
 type PanelId = 1 | 2 | 3
+
+// ─── Executive Summary ────────────────────────────────────────────────────────
+
+/** Replace first-person possessive with impersonal third-person for display. */
+function impersonal(text: string): string {
+  return text
+    .replace(/\bOur\b/g, 'The')
+    .replace(/\bour\b/g, 'the')
+    .replace(/\bWe\b/g, 'The organisation')
+    .replace(/\bwe\b/g, 'the organisation')
+}
+
+function KpiCard({
+  value,
+  label,
+  barPercent,
+  barColorClass,
+}: {
+  value: string
+  label: string
+  barPercent?: number      // 0–100; omit for no bar
+  barColorClass?: string   // Tailwind bg-* class for the filled portion
+}) {
+  return (
+    <div className="flex flex-col items-center rounded-lg border border-border bg-white px-4 py-4 text-center shadow-sm">
+      <div className="text-2xl font-bold text-foreground">{value}</div>
+      {barPercent != null && (
+        <div className="mt-2 h-1.5 w-full rounded-full bg-gray-200">
+          <div
+            className={`h-1.5 rounded-full ${barColorClass ?? 'bg-blue-400'}`}
+            style={{ width: `${Math.min(100, Math.max(0, barPercent))}%` }}
+          />
+        </div>
+      )}
+      <div className="mt-1.5 text-xs text-muted-foreground">{label}</div>
+    </div>
+  )
+}
+
+function ExecutiveSummaryCard({ data }: { data: AnalysisOutput }) {
+  const fi = data.financial_impact as Record<string, any> | null
+  const tnfd = data.tnfd_scenario_frame as Record<string, any> | null
+  const evalResult = data.evaluation_result as Record<string, any> | null
+  const narratives = data.stakeholder_narratives as Record<string, any> | null
+  const execSummary = narratives?.executive_summary as Record<string, any> | undefined
+
+  const severeMid: number | undefined = fi?.headline?.severe_exposure_range?.mid
+  const exposureLabel = severeMid != null ? `€${(severeMid / 1e6).toFixed(1)}M` : '—'
+
+  const physicalScore: number | undefined = tnfd?.physical_axis_detail?.score
+  const transitionScore: number | undefined = tnfd?.transition_axis_detail?.score
+
+  const qualityScore: number | undefined = evalResult?.overall_score
+
+  const narrative: string = impersonal(execSummary?.narrative ?? '')
+  const riskLevel: string = execSummary?.risk_rating?.level ?? '—'
+  const riskTrend: string = execSummary?.risk_rating?.trend ?? '—'
+  const riskConfidence: string = execSummary?.risk_rating?.confidence ?? '—'
+  const strategicImperative: string = impersonal(execSummary?.strategic_imperative ?? '')
+  const rawRecommendedAction: string = execSummary?.recommended_board_action ?? ''
+  // Supplement with the investment amount from CFO brief when not already present in the action text
+  const proposedInvestment: string = narratives?.cfo_brief?.investment_case?.proposed_investment ?? ''
+  const recommendedAction: string = impersonal(
+    rawRecommendedAction && proposedInvestment && !rawRecommendedAction.includes('€')
+      ? rawRecommendedAction.replace(/\.$/, '') + ` — proposed investment: ${proposedInvestment}.`
+      : rawRecommendedAction
+  )
+
+  return (
+    <div id="exec-summary-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      {/* Gradient accent bar */}
+      <div className="h-1.5 bg-gradient-to-r from-emerald-500 via-blue-500 to-violet-500" />
+      <div className="p-6">
+        <h2 className="mb-5 text-xl font-bold text-foreground">1. Executive Summary</h2>
+
+        {/* KPI row */}
+        <div className="mb-5 grid grid-cols-4 gap-3">
+          {/* Exposure — currency value, no score bar */}
+          <KpiCard value={exposureLabel} label="Severe Exposure (Mid)" />
+
+          {/* Physical Risk — higher score = more risk → red bar */}
+          <KpiCard
+            value={physicalScore != null ? physicalScore.toFixed(2) : '—'}
+            label="Physical Risk Score"
+            barPercent={physicalScore != null ? physicalScore * 100 : undefined}
+            barColorClass="bg-gradient-to-r from-orange-400 to-red-500"
+          />
+
+          {/* Transition Score — higher = more alignment (neutral/positive) → blue bar */}
+          <KpiCard
+            value={transitionScore != null ? transitionScore.toFixed(2) : '—'}
+            label="Transition Score"
+            barPercent={transitionScore != null ? transitionScore * 100 : undefined}
+            barColorClass="bg-gradient-to-r from-sky-400 to-blue-500"
+          />
+
+          {/* Quality Score — higher = better → green bar */}
+          <KpiCard
+            value={qualityScore != null ? `${qualityScore}/100` : '—'}
+            label="Quality Score"
+            barPercent={qualityScore}
+            barColorClass="bg-gradient-to-r from-emerald-400 to-green-500"
+          />
+        </div>
+
+        {/* Narrative */}
+        {narrative && (
+          <p className="mb-4 text-sm leading-relaxed text-foreground">{narrative}</p>
+        )}
+
+        {/* Risk rating box */}
+        <div className="mb-4 rounded border border-amber-400 bg-amber-50 px-4 py-2.5">
+          <span className="text-sm">
+            <span className="font-semibold text-foreground">Risk Rating:&nbsp;</span>
+            <span className="font-semibold text-amber-700">{riskLevel}</span>
+            <span className="mx-3 text-amber-300">|</span>
+            <span className="font-semibold text-foreground">Trend:&nbsp;</span>
+            <span className="font-semibold text-amber-700">{riskTrend}</span>
+            <span className="mx-3 text-amber-300">|</span>
+            <span className="font-semibold text-foreground">Confidence:&nbsp;</span>
+            <span className="font-semibold text-amber-700">{riskConfidence}</span>
+          </span>
+        </div>
+
+        {strategicImperative && (
+          <div className="mb-3 rounded border border-orange-400 bg-orange-50 px-4 py-2.5">
+            <span className="text-sm font-semibold text-foreground">Strategic Imperative:&nbsp;</span>
+            <span className="text-sm text-orange-800">{strategicImperative}</span>
+          </div>
+        )}
+        {recommendedAction && (
+          <div className="rounded border border-emerald-400 bg-emerald-50 px-4 py-2.5">
+            <span className="text-sm font-semibold text-foreground">Recommended Board Action:&nbsp;</span>
+            <span className="text-sm text-emerald-800">{recommendedAction}</span>
+          </div>
+        )}
+      </div>
+    </div>
+  )
+}
+
+// ─── Nature Dependency ────────────────────────────────────────────────────────
+
+function strengthColor(strength: string): string {
+  switch (strength?.toLowerCase()) {
+    case 'high':   return 'text-red-600 font-semibold'
+    case 'medium': return 'text-orange-500 font-semibold'
+    case 'low':    return 'text-green-600 font-semibold'
+    default:       return 'text-foreground'
+  }
+}
+
+function NatureDependencyCard({ data }: { data: AnalysisOutput }) {
+  const nd = data.nature_dependency as Record<string, any> | null
+  if (!nd) return null
+
+  const dependencies: any[] = nd.dependencies ?? []
+  const dependencyCount: number = nd.dependency_count ?? dependencies.length
+  const sector: string = nd.sector ?? ''
+  const derivationMethod: string = nd.derivation?.method ?? ''
+  const sensitivityFlag: string = nd.sensitivity_flag ?? '—'
+  const envCtx = nd.environmental_context as Record<string, any> | undefined
+
+  return (
+    <div id="nature-dependency-card" className="mb-4 overflow-hidden rounded-xl border border-border bg-white shadow-sm">
+      <div className="h-1.5 bg-gradient-to-r from-teal-500 via-emerald-500 to-green-400" />
+      <div className="p-6">
+        <h2 className="mb-4 text-xl font-bold text-foreground">3. Nature Dependencies</h2>
+
+        {/* Summary sentence */}
+        <p className="mb-5 text-sm leading-relaxed text-foreground">
+          This analysis identified{' '}
+          <span className="font-semibold">{dependencyCount} ecosystem service dependencies</span>{' '}
+          for the {sector.toLowerCase()} sector, derived using {derivationMethod}. Overall sensitivity flag:{' '}
+          <span className="font-semibold">{sensitivityFlag}</span>.
+          {envCtx?.biome && (
+            <span> Biome: <span className="font-medium">{envCtx.biome}</span>
+              {envCtx.water_stress_level && <span> · Water stress: <span className="font-medium">{envCtx.water_stress_level}</span></span>}
+            </span>
+          )}
+        </p>
+
+        {/* Dependencies table */}
+        {dependencies.length > 0 && (
+          <div className="mb-6 overflow-hidden rounded-lg border border-border">
+            <table className="w-full text-sm">
+              <thead>
+                <tr className="bg-slate-700 text-white">
+                  <th className="px-3 py-2.5 text-left font-semibold">Ecosystem Service</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Category</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Strength</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Type</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Substitutability</th>
+                  <th className="px-3 py-2.5 text-left font-semibold">Time to Failure</th>
+                </tr>
+              </thead>
+              <tbody>
+                {dependencies.map((dep, i) => (
+                  <tr key={i} className={i % 2 === 0 ? 'bg-white' : 'bg-slate-50'}>
+                    <td className="px-3 py-2.5 font-medium text-foreground">{dep.ecosystem_service}</td>
+                    <td className="px-3 py-2.5 text-foreground">{dep.category}</td>
+                    <td className={`px-3 py-2.5 ${strengthColor(dep.dependency_strength)}`}>{dep.dependency_strength}</td>
+                    <td className="px-3 py-2.5 text-foreground">{dep.dependency_type}</td>
+                    <td className="px-3 py-2.5 text-foreground">{dep.substitutability}</td>
+                    <td className="px-3 py-2.5 text-foreground">{dep.time_to_failure}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+
+        {/* Dependency rationales */}
+        <div>
+          <h3 className="mb-3 text-base font-bold text-foreground">Dependency Rationales</h3>
+          <div className="flex flex-col gap-1.5">
+            {dependencies.map((dep, i) => (
+              <p key={i} className="text-sm text-foreground">
+                <span className="font-semibold">{dep.ecosystem_service}:&nbsp;</span>
+                {dep.rationale}
+              </p>
+            ))}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
 
 const PANEL_LABELS: Record<PanelId, string> = {
   1: 'Input',
@@ -604,7 +832,7 @@ export function App() {
 
           {/* Panel 3 — Analysis */}
           {activePanel === 3 ? (
-            <section className={`flex flex-1 flex-col p-6 min-w-0 transition-opacity ${workflowActive ? 'opacity-100' : 'opacity-40'}`}>
+            <section className={`flex flex-1 flex-col p-6 min-w-0 transition-opacity ${workflowActive || analysisOutput ? 'opacity-100' : 'opacity-40'}`}>
               <div className="mb-4 flex items-center gap-2">
                 <span className="flex h-7 w-7 items-center justify-center rounded-full bg-primary text-xs font-bold text-primary-foreground">3</span>
                 <h2 className="text-lg font-semibold text-foreground flex-1">Analysis Output</h2>
@@ -627,6 +855,8 @@ export function App() {
                 </div>
               ) : analysisOutput ? (
                 <div className="flex flex-1 flex-col gap-2 overflow-y-auto">
+                  <ExecutiveSummaryCard data={analysisOutput} />
+                  <NatureDependencyCard data={analysisOutput} />
                   {ANALYSIS_SECTIONS.map(({ key, label }) => {
                     const isOpen = expandedSections.has(key)
                     return (
